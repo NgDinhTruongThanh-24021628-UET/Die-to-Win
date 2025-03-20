@@ -1,0 +1,51 @@
+# depslib dependency file v1.0
+1742400959 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+	<iostream>
+	<fstream>
+	<string>
+	<vector>
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	<SDL_mixer.h>
+	"Player.h"
+	"Texture.h"
+
+1742382053 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+	<vector>
+	<SDL.h>
+
+1742381846 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+	<iostream>
+	<SDL.h>
+	"Player.h"
+	"Texture.h"
+
+1742295619 source:c:\users\truong thanh\documents\sdl projects\die to win\onoff.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	"OnOff.h"
+
+1742295924 c:\users\truong thanh\documents\sdl projects\die to win\onoff.h
+
+1742297023 source:c:\users\truong thanh\documents\sdl projects\die to win\globals.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	"Globals.h"
+
+1742297023 c:\users\truong thanh\documents\sdl projects\die to win\globals.h
+
+1742358242 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
+	<iostream>
+	<string>
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	"Texture.h"
+
+1742359468 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
+	<string>
+	<SDL.h>
+
