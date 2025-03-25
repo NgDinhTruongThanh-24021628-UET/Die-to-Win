@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include "Player.h"
 #include "Texture.h"
+#include "LevelObjs.h"
 
 extern SDL_Renderer *gRenderer;
 extern LTexture cubeTexture;
@@ -71,7 +72,7 @@ void Player::handleEvent(SDL_Event &e) {
 }
 
 // Move player, platform physics included, deltaTime for consistent physics
-void Player::move(std::vector<SDL_Rect> &blocks, int blockCount, double deltaTime) {
+void Player::move(std::vector<Block> &blocks, bool reverseGravity, double deltaTime) {
     // Horizontal movement
     if (moveLeft && !moveRight) {
         mVelX = -X_VELOCITY;
@@ -83,75 +84,48 @@ void Player::move(std::vector<SDL_Rect> &blocks, int blockCount, double deltaTim
 
     double nextPosX = mPosX + mVelX * deltaTime;
 
-    // X collision detection
-    for (int i = 0; i < blockCount; ++i) {
-        SDL_Rect platform = blocks[i];
-
-        // From left side
-        if (mVelX > 0 &&
-            mPosX + PLAYER_WIDTH <= platform.x &&
-            nextPosX + PLAYER_WIDTH >= platform.x &&
-            mPosY + PLAYER_HEIGHT > platform.y &&
-            mPosY < platform.y + platform.h) {
-
-            nextPosX = platform.x - PLAYER_WIDTH;
-            mVelX = 0.0;
-        }
-
-        // From right side
-        if (mVelX < 0 &&
-            mPosX >= platform.x + platform.w &&
-            nextPosX <= platform.x + platform.w &&
-            mPosY + PLAYER_HEIGHT > platform.y &&
-            mPosY < platform.y + platform.h) {
-
-            nextPosX = platform.x + platform.w;
-            mVelX = 0.0;
+    // Block collision detection (X axis)
+    for (const auto &block : blocks) {
+        if (block.checkXCollision(mPosX, mPosY, nextPosX, mVelX, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+            mVelX=0.0;
         }
     }
+
+    /* Prevent out of bounds
+    if (nextPosX <= 0) {
+        nextPosX = 0;
+        mVelX=0.0;
+    }
+    if (nextPosX + PLAYER_WIDTH >= SCREEN_WIDTH) {
+        nextPosX = SCREEN_WIDTH - PLAYER_WIDTH;
+        mVelX=0.0;
+    } */
+
     // Update position
     mPosX = nextPosX;
 
-    // Prevent out of bounds
-    if (mPosX < 0) mPosX = 0;
-    if (mPosX + PLAYER_WIDTH > SCREEN_WIDTH) mPosX = SCREEN_WIDTH - PLAYER_WIDTH;
-
     // Gravity (scaled by deltaTime)
-    mVelY += GRAVITY * deltaTime;
-    if (mVelY > TERMINAL_VELOCITY) mVelY = TERMINAL_VELOCITY;
+    if (!reverseGravity) {
+        mVelY += GRAVITY * deltaTime;
+        if (mVelY > TERMINAL_VELOCITY) mVelY = TERMINAL_VELOCITY;
+    }
+    else {
+        mVelY-=GRAVITY*deltaTime;
+        if (mVelY<-TERMINAL_VELOCITY) mVelY=-TERMINAL_VELOCITY;
+    }
+
     double nextPosY = mPosY + mVelY * deltaTime;
 
     bool onPlatform = false;
 
-    // Y collision detection
-    for (int i = 0; i < blockCount; i++) {
-        SDL_Rect platform = blocks[i];
-
-        // Falling
-        if (mVelY > 0 &&
-            mPosY + PLAYER_HEIGHT <= platform.y &&
-            nextPosY + PLAYER_HEIGHT >= platform.y &&
-            mPosX + PLAYER_WIDTH > platform.x &&
-            mPosX < platform.x + platform.w) {
-
-            nextPosY = platform.y - PLAYER_HEIGHT;
-            mVelY = 0.0;
-            onPlatform = true;
-        }
-
-        // Jumping up, hitting bottom
-        if (mVelY < 0 &&
-            mPosY >= platform.y + platform.h &&
-            nextPosY <= platform.y + platform.h &&
-            mPosX + PLAYER_WIDTH > platform.x &&
-            mPosX < platform.x + platform.w) {
-
-            nextPosY = platform.y + platform.h;
-            mVelY = 0.0;
+    // Block collision detection (Y axis)
+    for (const auto &block : blocks) {
+        if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT, onPlatform)) {
+            mVelY=0.0;
         }
     }
 
-    // On the ground
+    /* Prevent out of bounds
     if (nextPosY + PLAYER_HEIGHT >= SCREEN_HEIGHT) {
         nextPosY = SCREEN_HEIGHT - PLAYER_HEIGHT;
         mVelY = 0.0;
@@ -160,7 +134,7 @@ void Player::move(std::vector<SDL_Rect> &blocks, int blockCount, double deltaTim
     if (nextPosY <= 0) {
         nextPosY=0;
         mVelY=0.0;
-    }
+    } */
 
     // Calculate coyote time
     if (onPlatform) {
@@ -171,20 +145,101 @@ void Player::move(std::vector<SDL_Rect> &blocks, int blockCount, double deltaTim
         if (coyoteTimer < 0) coyoteTimer = 0;
     }
 
-    // Update position
-    mPosY = nextPosY;
-
     // Allowing jump once
     if (isJumpHeld && canJump && (onPlatform || coyoteTimer > 0)) {
-        mVelY = JUMP_VELOCITY;
+        if (!reverseGravity) {
+            mVelY = JUMP_VELOCITY;
+        }
+        else {
+            mVelY=-JUMP_VELOCITY;
+        }
         canJump = false;
         coyoteTimer = 0;  // Reset coyote timer after jump
     }
     if (!isJumpHeld) {
         canJump = true;
     }
+
+    // Update position
+    mPosY = nextPosY;
 }
 
+// Jump orb and jump pad interactions
+void Player::interact(std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime) {
+    for (auto &orb : jumpOrbs) {
+        if (orb.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT) && isJumpHeld && canJump) {
+            char orbType=orb.getType();
+            if (!reverseGravity) {
+                switch (orbType) {
+                case 'Y': // Yellow orb
+                    mVelY=JUMP_VELOCITY;
+                    break;
+                case 'B': // Blue orb
+                    reverseGravity=true;
+                    mVelY=0;
+                    break;
+                case 'G': // Green orb
+                    reverseGravity=true;
+                    mVelY=-JUMP_VELOCITY;
+                    break;
+                }
+            }
+            else {
+                switch (orbType) {
+                case 'Y':
+                    mVelY=-JUMP_VELOCITY;
+                    break;
+                case 'B':
+                    reverseGravity=false;
+                    mVelY=0;
+                    break;
+                case 'G':
+                    reverseGravity=false;
+                    mVelY=JUMP_VELOCITY;
+                    break;
+                }
+            }
+            canJump=false;
+        }
+    }
+    for (auto &pad : jumpPads) {
+        if (pad.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+            if (pad.canTrigger()) {
+                char padType=pad.getType();
+                if (!reverseGravity) {
+                    switch (padType) {
+                    case 'J':
+                        mVelY=JUMP_VELOCITY*1.37;
+                        break;
+                    case 'S':
+                        reverseGravity=true;
+                        break;
+                    case 'P':
+                        mVelY=JUMP_VELOCITY;
+                        break;
+                    }
+                }
+                else {
+                    switch (padType) {
+                    case 'J':
+                        mVelY=-JUMP_VELOCITY*1.37;
+                        break;
+                    case 'S':
+                        reverseGravity=false;
+                        break;
+                    case 'P':
+                        mVelY=-JUMP_VELOCITY;
+                        break;
+                    }
+                }
+                pad.markUsed();
+            }
+        }
+        else {
+            pad.resetUsed();
+        }
+    }
+}
 
 // Render player to window
 void Player::render() {
@@ -194,4 +249,9 @@ void Player::render() {
 // Get player hitbox, for spike collision
 SDL_Rect Player::getHitbox() {
     return {static_cast<int>(mPosX), static_cast<int>(mPosY), PLAYER_WIDTH, PLAYER_HEIGHT};
+}
+
+// Get gravity status
+bool Player::getGravity() {
+    return reverseGravity;
 }

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <SDL.h>
+#include "LevelObjs.h"
 
 extern const int SCREEN_WIDTH;
 extern const int SCREEN_HEIGHT;
@@ -19,7 +20,7 @@ public:
     static constexpr double X_VELOCITY=500.0;
 
     // Initial velocity when jump
-    static constexpr double JUMP_VELOCITY=-1400.0;
+    static constexpr double JUMP_VELOCITY=-1390.0;
 
     // Gravity
     static constexpr double GRAVITY=6000.0;
@@ -34,13 +35,19 @@ public:
     void handleEvent(SDL_Event &e);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<SDL_Rect> &blocks, int blockCount, double deltaTime);
+    void move(std::vector<Block> &blocks, bool reverseGravity, double deltaTime);
+
+    // Jump orb and jump pad interactions
+    void interact(std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime);
 
     // Render player to window
     void render();
 
     // Get player hitbox, for spike collision
     SDL_Rect getHitbox();
+
+    // Get gravity status
+    bool getGravity();
 
 private:
     // Player X/Y positions
@@ -54,6 +61,9 @@ private:
 
     // Check if player is moving left or right
     bool moveLeft, moveRight;
+
+    // Check if gravity is reversed
+    bool reverseGravity;
 
     // Coyote time, allowing player to jump just after leaving platform
     double coyoteTimer;

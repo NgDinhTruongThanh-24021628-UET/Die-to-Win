@@ -8,6 +8,7 @@
 #include <SDL_mixer.h>
 #include "Player.h"
 #include "Texture.h"
+#include "LevelObjs.h"
 using namespace std;
 
 // Window sizes
@@ -28,6 +29,14 @@ LTexture blockTexture;
 LTexture spikeTexture;
 LTexture cubeTexture;
 
+LTexture yellowOrbTexture;
+LTexture blueOrbTexture;
+LTexture greenOrbTexture;
+
+LTexture yellowPadTexture;
+LTexture spiderPadTexture;
+LTexture pinkPadTexture;
+
 // Initialize
 bool init() {
     bool success=true;
@@ -45,7 +54,7 @@ bool init() {
         }
 
         // Create a window
-        gWindow=SDL_CreateWindow("The Square Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+        gWindow=SDL_CreateWindow("Die to Win", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if (gWindow==nullptr) {
             cout << "Window could not be created. " << SDL_GetError() << endl;
             success=false;
@@ -122,23 +131,13 @@ const int LEVEL_WIDTH=19;
 const int LEVEL_HEIGHT=11;
 
 // Vector to store objects
-vector<SDL_Rect> blocks;
-vector<SDL_Rect> spikes;
-
-// Orb and jump pad structure
-struct JumpOrb {
-    SDL_Rect rect;
-    int type; // 0=yellow, 1=blue, 2=green
-};
-struct JumpPad {
-    SDL_Rect rect;
-    int type; // 0=yellow, 1=spider, 2=pink
-};
+vector<Block> blocks;
+vector<Spike> spikes;
 vector<JumpOrb> jumpOrbs;
 vector<JumpPad> jumpPads;
 
 // Load level from a file
-void loadLevel(const string &path, vector<SDL_Rect> &blocks, vector<SDL_Rect> &spikes, vector<JumpOrb> &jumpOrbs, vector<JumpPad> &jumpPads) {
+void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes, vector<JumpOrb> &jumpOrbs, vector<JumpPad> &jumpPads) {
     ifstream file(path);
     if (!file.is_open()) {
         cout << "Failed to open level file." << endl;
@@ -156,34 +155,24 @@ void loadLevel(const string &path, vector<SDL_Rect> &blocks, vector<SDL_Rect> &s
 
             switch (tile) {
             case '1': // Block
-                blocks.push_back({baseX, baseY, TILE_SIZE, TILE_SIZE});
+                blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE);
                 break;
 
             case '2': // Spike
-                spikes.push_back({baseX+TILE_SIZE*3/8, baseY+TILE_SIZE/6, TILE_SIZE/4, TILE_SIZE/2});
+                spikes.emplace_back(baseX+TILE_SIZE*3/8, baseY+TILE_SIZE/4, TILE_SIZE/4, TILE_SIZE/2);
                 break;
 
             case 'Y': // Yellow orb
             case 'B': // Blue orb
             case 'G': { // Green orb
-                int orbType;
-                if (tile=='Y') orbType=0;
-                else if (tile=='B') orbType=1;
-                else if (tile=='G') orbType=2;
-                SDL_Rect orbRect={baseX-TILE_SIZE/10, baseY-TILE_SIZE/10, TILE_SIZE*12/10, TILE_SIZE*12/10};
-                jumpOrbs.push_back({orbRect, orbType});
+                jumpOrbs.emplace_back(baseX-TILE_SIZE/10, baseY-TILE_SIZE/10, TILE_SIZE*12/10, TILE_SIZE*12/10, tile);
                 break;
             }
 
             case 'J': // Yellow pad
             case 'S': // Spider pad
             case 'P': { // Pink pad
-                int padType;
-                if (tile=='J') padType=0;
-                else if (tile=='S') padType=1;
-                else if (tile=='P') padType=2;
-                SDL_Rect padRect={baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE*2/15};
-                jumpPads.push_back({padRect, padType});
+                jumpPads.emplace_back(baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE*2/15, tile);
                 break;
             }
             default:
@@ -196,36 +185,31 @@ void loadLevel(const string &path, vector<SDL_Rect> &blocks, vector<SDL_Rect> &s
     file.close();
 }
 
-// Check spike collision
-bool checkCollision(SDL_Rect playerRect, SDL_Rect platformRect) {
-    return SDL_HasIntersection(&playerRect, &platformRect);
-}
-
-void renderObjects(const vector<SDL_Rect> &blocks, const vector<SDL_Rect> &spikes, const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads) {
+void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes, const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads) {
     // Render platforms (blocks)
     for (const auto& block : blocks) {
-        blockTexture.render(block.x, block.y);
+        blockTexture.render(block.getHitbox().x, block.getHitbox().y);
     }
 
     // Render spikes
     for (const auto& spike : spikes) {
-        spikeTexture.render(spike.x-TILE_SIZE*3/8, spike.y-TILE_SIZE/6);
+        spikeTexture.render(spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4);
     }
 
     // Render orbs
     for (const auto &orb : jumpOrbs) {
-        switch (orb.type) {
-        case 0: // Yellow
+        switch (orb.getType()) {
+        case 'Y': // Yellow
             SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.rect);
+            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
             break;
-        case 1: // Blue
+        case 'B': // Blue
             SDL_SetRenderDrawColor(gRenderer, 0, 0xFF, 0xFF, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.rect);
+            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
             break;
-        case 2: // Green
+        case 'G': // Green
             SDL_SetRenderDrawColor(gRenderer, 0, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.rect);
+            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
             break;
         default:
             break;
@@ -234,18 +218,18 @@ void renderObjects(const vector<SDL_Rect> &blocks, const vector<SDL_Rect> &spike
 
     // Render pads
     for (const auto &pad : jumpPads) {
-        switch (pad.type) {
-        case 0: // Yellow
+        switch (pad.getType()) {
+        case 'J': // Yellow
             SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.rect);
+            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
             break;
-        case 1: // Spider
+        case 'S': // Spider
             SDL_SetRenderDrawColor(gRenderer, 0x80, 0, 0x80, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.rect);
+            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
             break;
-        case 2: // Pink
-            SDL_SetRenderDrawColor(gRenderer, 0x80, 0, 0x80, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.rect);
+        case 'P': // Pink
+            SDL_SetRenderDrawColor(gRenderer, 0x40, 0, 0x88, 0xFF);
+            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
             break;
         default:
             break;
@@ -290,18 +274,22 @@ int main(int argc, char *argv[]) {
                     cube.handleEvent(e);
                 }
 
-                // Handle movements + death
-                cube.move(blocks, blocks.size(), deltaTime);  // Pass deltaTime here
+                // Handle level interactions
+                cube.move(blocks, cube.getGravity(), deltaTime);
+                cube.interact(jumpOrbs, jumpPads, deltaTime);
+
                 SDL_Rect playerHitbox = cube.getHitbox();
                 for (const auto &spike : spikes) {
-                    if (checkCollision(playerHitbox, spike)) quit = true;
+                    if (spike.checkCollision(playerHitbox.x, playerHitbox.y, playerHitbox.w, playerHitbox.h)) {
+                        quit=true;
+                    }
                 }
 
                 // Rendering
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
                 SDL_RenderClear(gRenderer);
 
-                renderObjects(blocks, spikes, jumpOrbs, jumpPads);
+                renderLevel(blocks, spikes, jumpOrbs, jumpPads);
 
                 cube.render();
 
