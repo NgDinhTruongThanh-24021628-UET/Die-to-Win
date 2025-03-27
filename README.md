@@ -14,4 +14,7 @@ New features: Jump orbs and Jump pads
 - Pink pad: Jump normal when hit
 
 ### v0.01
-Features: Basic graphics, simple jump physics, program ends on death
+Features:
+- Basic graphics
+- Simple platformer physics
+- Game ends on death
