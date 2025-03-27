@@ -12,17 +12,17 @@
 using namespace std;
 
 // Window sizes
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 720;
+const int SCREEN_WIDTH=1280;
+const int SCREEN_HEIGHT=720;
 
 // Window to render to
-SDL_Window *gWindow = nullptr;
+SDL_Window *gWindow=nullptr;
 
 // Renderer
-SDL_Renderer *gRenderer = nullptr;
+SDL_Renderer *gRenderer=nullptr;
 
 // Font (for menu + instructions, later)
-TTF_Font *gFont = nullptr;
+TTF_Font *gFont=nullptr;
 
 // Textures
 LTexture blockTexture;
@@ -121,6 +121,8 @@ void close() {
     gWindow=nullptr;
 
     // Deal with libraries
+    Mix_Quit();
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -167,16 +169,14 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
             case 'G': { // Green orb
                 jumpOrbs.emplace_back(baseX-TILE_SIZE/10, baseY-TILE_SIZE/10, TILE_SIZE*12/10, TILE_SIZE*12/10, tile);
                 break;
-            }
+                }
 
             case 'J': // Yellow pad
             case 'S': // Spider pad
             case 'P': { // Pink pad
                 jumpPads.emplace_back(baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE*2/15, tile);
                 break;
-            }
-            default:
-                break;
+                }
             }
         }
         row++;
@@ -186,16 +186,6 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
 }
 
 void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes, const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads) {
-    // Render platforms (blocks)
-    for (const auto& block : blocks) {
-        blockTexture.render(block.getHitbox().x, block.getHitbox().y);
-    }
-
-    // Render spikes
-    for (const auto& spike : spikes) {
-        spikeTexture.render(spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4);
-    }
-
     // Render orbs
     for (const auto &orb : jumpOrbs) {
         switch (orb.getType()) {
@@ -210,8 +200,6 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes, const
         case 'G': // Green
             SDL_SetRenderDrawColor(gRenderer, 0, 0xFF, 0, 0xFF);
             SDL_RenderFillRect(gRenderer, &orb.getHitbox());
-            break;
-        default:
             break;
         }
     }
@@ -231,9 +219,17 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes, const
             SDL_SetRenderDrawColor(gRenderer, 0x40, 0, 0x88, 0xFF);
             SDL_RenderFillRect(gRenderer, &pad.getHitbox());
             break;
-        default:
-            break;
         }
+    }
+
+    // Render platforms (blocks)
+    for (const auto& block : blocks) {
+        blockTexture.render(block.getHitbox().x, block.getHitbox().y);
+    }
+
+    // Render spikes
+    for (const auto& spike : spikes) {
+        spikeTexture.render(spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4);
     }
 }
 
@@ -250,9 +246,9 @@ int main(int argc, char *argv[]) {
             loadLevel("Level1.txt", blocks, spikes, jumpOrbs, jumpPads);
 
             // Delta time, to keep physics consistent across all refresh rates
-            Uint64 NOW = SDL_GetPerformanceCounter();
-            Uint64 LAST = 0;
-            double deltaTime = 0;
+            Uint64 NOW=SDL_GetPerformanceCounter();
+            Uint64 LAST=0;
+            double deltaTime=0;
 
             bool quit=false;
             SDL_Event e;
@@ -261,29 +257,22 @@ int main(int argc, char *argv[]) {
             // Running
             while (!quit) {
                 // Calculate delta time
-                LAST = NOW;
-                NOW = SDL_GetPerformanceCounter();
-                deltaTime = (double)((NOW - LAST) * 1000) / SDL_GetPerformanceFrequency();
-                deltaTime /= 1000.0; // Convert to seconds
+                LAST=NOW;
+                NOW=SDL_GetPerformanceCounter();
+                deltaTime=double((NOW-LAST)*1000)/SDL_GetPerformanceFrequency();
+                deltaTime/=1000.0; // Convert to seconds
 
                 // Check events
                 while (SDL_PollEvent(&e)) {
-                    if (e.type == SDL_QUIT) {
-                        quit = true;
+                    if (e.type==SDL_QUIT || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) {
+                        quit=true;
                     }
                     cube.handleEvent(e);
                 }
 
                 // Handle level interactions
-                cube.move(blocks, cube.getGravity(), deltaTime);
-                cube.interact(jumpOrbs, jumpPads, deltaTime);
-
-                SDL_Rect playerHitbox = cube.getHitbox();
-                for (const auto &spike : spikes) {
-                    if (spike.checkCollision(playerHitbox.x, playerHitbox.y, playerHitbox.w, playerHitbox.h)) {
-                        quit=true;
-                    }
-                }
+                cube.move(blocks, jumpOrbs, deltaTime);
+                cube.interact(blocks, spikes, jumpOrbs, jumpPads, quit);
 
                 // Rendering
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
@@ -296,8 +285,10 @@ int main(int argc, char *argv[]) {
                 SDL_RenderPresent(gRenderer);
             }
         }
+        SDL_Delay(200);
     }
     close();
+    cout << "You win";
     return 0;
 }
 

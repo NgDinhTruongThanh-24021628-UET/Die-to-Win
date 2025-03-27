@@ -47,7 +47,6 @@ public:
 private:
     SDL_Rect hitbox;
     char orbType;
-    bool orbUsed=false;
 };
 
 class JumpPad {
@@ -60,9 +59,9 @@ public:
 
     const int getType() const;
 
+    // Only trigger pad once
     void markUsed();
     void resetUsed();
-
     bool canTrigger();
 
 private:

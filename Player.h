@@ -26,7 +26,7 @@ public:
     static constexpr double GRAVITY=6000.0;
 
     // Fall speed limit
-    static constexpr double TERMINAL_VELOCITY = 4000.0;
+    static constexpr double TERMINAL_VELOCITY=4000.0;
 
     // Constructor
     Player();
@@ -35,16 +35,23 @@ public:
     void handleEvent(SDL_Event &e);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<Block> &blocks, bool reverseGravity, double deltaTime);
+    void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, double deltaTime);
+
+    // Helper function for spider pad interactions
+    void findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> &spikes);
 
     // Jump orb and jump pad interactions
-    void interact(std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime);
+    void interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
+                  std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, bool &quit);
 
     // Render player to window
     void render();
 
     // Get player hitbox, for spike collision
     SDL_Rect getHitbox();
+
+    // Get player hitbox, for spider pad interactions
+    SDL_Rect getSPadHitbox();
 
     // Get gravity status
     bool getGravity();

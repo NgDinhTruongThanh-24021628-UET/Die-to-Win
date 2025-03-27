@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1742829878 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1743076604 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -12,12 +12,12 @@
 	"Texture.h"
 	"LevelObjs.h"
 
-1742744084 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1743075424 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 
-1742830650 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1743079776 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	"Player.h"
@@ -62,12 +62,12 @@
 	<iostream>
 	<SDL.h>
 
-1742830650 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1743079651 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 
-1742830650 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1743079651 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<SDL.h>
 	<vector>

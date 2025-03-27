@@ -20,9 +20,9 @@ bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX
     // From left side
     if (playerVelX>0 &&
         playerX+PLAYER_WIDTH<=hitbox.x &&
-        nextPlayerX+PLAYER_WIDTH>=hitbox.x &&
+        nextPlayerX+PLAYER_WIDTH>=hitbox.x && // If player will go through platform
         playerY+PLAYER_HEIGHT>hitbox.y &&
-        playerY<hitbox.y+hitbox.h) {
+        playerY<hitbox.y+hitbox.h) { // And will collide with platform
 
         nextPlayerX=hitbox.x-PLAYER_WIDTH;
         collided=true;
@@ -31,9 +31,9 @@ bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX
     // From right side
     if (playerVelX<0 &&
         playerX>=hitbox.x+hitbox.w &&
-        nextPlayerX<=hitbox.x+hitbox.w &&
+        nextPlayerX<=hitbox.x+hitbox.w && // If player will go through platform
         playerY+PLAYER_HEIGHT>hitbox.y &&
-        playerY<hitbox.y+hitbox.h) {
+        playerY<hitbox.y+hitbox.h) { // And will collide with platform
 
         nextPlayerX=hitbox.x+hitbox.w;
         collided=true;
@@ -49,9 +49,9 @@ bool Block::checkYCollision(int playerX, double &playerY, double &nextPlayerY,
     // Falling
     if (playerVelY>0 &&
         playerY+PLAYER_HEIGHT<=hitbox.y &&
-        nextPlayerY+PLAYER_HEIGHT>=hitbox.y &&
+        nextPlayerY+PLAYER_HEIGHT>=hitbox.y && // If player will go through platform
         playerX+PLAYER_WIDTH>hitbox.x &&
-        playerX<hitbox.x+hitbox.w) {
+        playerX<hitbox.x+hitbox.w) { // And will collide with platform
 
         nextPlayerY=hitbox.y-PLAYER_HEIGHT;
         collided=true;
@@ -61,9 +61,9 @@ bool Block::checkYCollision(int playerX, double &playerY, double &nextPlayerY,
     // Jumping up, hitting block
     if (playerVelY<0 &&
         playerY>=hitbox.y+hitbox.h &&
-        nextPlayerY<=hitbox.y+hitbox.h &&
+        nextPlayerY<=hitbox.y+hitbox.h && // If player will go through platform
         playerX+PLAYER_WIDTH>hitbox.x &&
-        playerX<hitbox.x+hitbox.w) {
+        playerX<hitbox.x+hitbox.w) { // And will collide with platform
 
         nextPlayerY=hitbox.y+hitbox.h;
         collided=true;
@@ -89,7 +89,7 @@ bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int
     return playerX+PLAYER_WIDTH>=hitbox.x &&
            playerX<=hitbox.x+hitbox.w &&
            playerY+PLAYER_HEIGHT>=hitbox.y &&
-           playerY<=hitbox.y+hitbox.h;
+           playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
 const SDL_Rect &Spike::getHitbox() const {
@@ -109,7 +109,7 @@ bool JumpOrb::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, i
     return playerX+PLAYER_WIDTH>=hitbox.x &&
            playerX<=hitbox.x+hitbox.w &&
            playerY+PLAYER_HEIGHT>=hitbox.y &&
-           playerY<=hitbox.y+hitbox.h;
+           playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
 const SDL_Rect &JumpOrb::getHitbox() const {
@@ -133,7 +133,7 @@ bool JumpPad::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, i
     return playerX+PLAYER_WIDTH>=hitbox.x &&
            playerX<=hitbox.x+hitbox.w &&
            playerY+PLAYER_HEIGHT>=hitbox.y &&
-           playerY<=hitbox.y+hitbox.h;
+           playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
 const SDL_Rect &JumpPad::getHitbox() const {
