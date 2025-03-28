@@ -343,7 +343,8 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
 
 // Render player to window
 void Player::render() {
-    cubeTexture.render(static_cast<int>(mPosX), static_cast<int>(mPosY), nullptr, 0.0, nullptr, (reverseGravity ? SDL_FLIP_VERTICAL : SDL_FLIP_NONE));
+    SDL_Rect cube=getHitbox();
+    cubeTexture.render(cube, nullptr, 0.0, nullptr, (reverseGravity ? SDL_FLIP_VERTICAL : SDL_FLIP_NONE));
 }
 
 

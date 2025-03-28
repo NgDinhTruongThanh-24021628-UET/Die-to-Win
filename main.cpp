@@ -88,22 +88,32 @@ bool init() {
 // Load sprites
 bool loadMedia() {
     bool success=true;
-
-    if (!blockTexture.loadFromFile("Block.png")) {
+    if (!blockTexture.loadFromFile("Sprites/Block.png")) {
         cout << "Failed to load block texture." << endl;
         success=false;
     }
-
-    if (!spikeTexture.loadFromFile("Spike.png")) {
+    if (!spikeTexture.loadFromFile("Sprites/Spike.png")) {
         cout << "Failed to load spike texture." << endl;
         success=false;
     }
-
-    if (!cubeTexture.loadFromFile("Player.png")) {
+    if (!cubeTexture.loadFromFile("Sprites/Player.png")) {
         cout << "Failed to load cube texture." << endl;
         success=false;
     }
+    if (!yellowOrbTexture.loadFromFile("Sprites/Yellow Orb.png") ||
+        !blueOrbTexture.loadFromFile("Sprites/Blue Orb.png") ||
+        !greenOrbTexture.loadFromFile("Sprites/Green Orb.png")) {
 
+        cout << "Failed to load orb texture." << endl;
+        success=false;
+    }
+    if (!yellowPadTexture.loadFromFile("Sprites/Yellow Pad.png") ||
+        !spiderPadTexture.loadFromFile("Sprites/Spider Pad.png") ||
+        !pinkPadTexture.loadFromFile("Sprites/Pink Pad.png")) {
+
+        cout << "Failed to load pad texture." << endl;
+        success=false;
+    }
     return success;
 }
 
@@ -113,6 +123,12 @@ void close() {
     blockTexture.free();
     spikeTexture.free();
     cubeTexture.free();
+    yellowOrbTexture.free();
+    blueOrbTexture.free();
+    greenOrbTexture.free();
+    yellowPadTexture.free();
+    spiderPadTexture.free();
+    pinkPadTexture.free();
 
     // Deal with window & renderer
     SDL_DestroyRenderer(gRenderer);
@@ -128,7 +144,7 @@ void close() {
 }
 
 // Split the level into tiles to place objects
-const int TILE_SIZE=72;
+const int TILE_SIZE=SCREEN_HEIGHT/10;
 const int LEVEL_WIDTH=19;
 const int LEVEL_HEIGHT=11;
 
@@ -172,11 +188,13 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
                 }
 
             case 'J': // Yellow pad
-            case 'S': // Spider pad
             case 'P': { // Pink pad
-                jumpPads.emplace_back(baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE*2/15, tile);
+                jumpPads.emplace_back(baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE/6, tile);
                 break;
-                }
+            }
+            case 'S': // Spider pad
+                jumpPads.emplace_back(baseX+TILE_SIZE/30, baseY+TILE_SIZE*3/4, TILE_SIZE*14/15, TILE_SIZE*2/5, tile);
+                break;
             }
         }
         row++;
@@ -185,51 +203,50 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
     file.close();
 }
 
-void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes, const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads) {
+void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
+                 const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double greenOrbAngle) {
     // Render orbs
     for (const auto &orb : jumpOrbs) {
+        SDL_Rect renderOrb={orb.getHitbox().x+TILE_SIZE/10, orb.getHitbox().y+TILE_SIZE/10, TILE_SIZE, TILE_SIZE};
         switch (orb.getType()) {
         case 'Y': // Yellow
-            SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
+            yellowOrbTexture.render(renderOrb);
             break;
         case 'B': // Blue
-            SDL_SetRenderDrawColor(gRenderer, 0, 0xFF, 0xFF, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
+            blueOrbTexture.render(renderOrb);
             break;
         case 'G': // Green
-            SDL_SetRenderDrawColor(gRenderer, 0, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &orb.getHitbox());
+            greenOrbTexture.render(renderOrb, nullptr, greenOrbAngle, nullptr, SDL_FLIP_NONE);
             break;
         }
     }
 
     // Render pads
     for (const auto &pad : jumpPads) {
+        SDL_Rect renderPad=pad.getHitbox();
         switch (pad.getType()) {
         case 'J': // Yellow
-            SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
+            yellowPadTexture.render(renderPad);
             break;
         case 'S': // Spider
-            SDL_SetRenderDrawColor(gRenderer, 0x80, 0, 0x80, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
+            spiderPadTexture.render(renderPad);
             break;
         case 'P': // Pink
-            SDL_SetRenderDrawColor(gRenderer, 0x40, 0, 0x88, 0xFF);
-            SDL_RenderFillRect(gRenderer, &pad.getHitbox());
+            pinkPadTexture.render(renderPad);
             break;
         }
     }
 
     // Render platforms (blocks)
     for (const auto& block : blocks) {
-        blockTexture.render(block.getHitbox().x, block.getHitbox().y);
+        SDL_Rect renderBlock=block.getHitbox();
+        blockTexture.render(renderBlock);
     }
 
     // Render spikes
     for (const auto& spike : spikes) {
-        spikeTexture.render(spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4);
+        SDL_Rect renderSpike={spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4, TILE_SIZE, TILE_SIZE};
+        spikeTexture.render(renderSpike);
     }
 }
 
@@ -253,6 +270,7 @@ int main(int argc, char *argv[]) {
             bool quit=false;
             SDL_Event e;
             Player cube;
+            double greenOrbAngle=0.0;
 
             // Running
             while (!quit) {
@@ -262,6 +280,12 @@ int main(int argc, char *argv[]) {
                 deltaTime=double((NOW-LAST)*1000)/SDL_GetPerformanceFrequency();
                 deltaTime/=1000.0; // Convert to seconds
 
+                // Calculate green orb texture rotation
+                greenOrbAngle+=180*deltaTime;
+                if (greenOrbAngle>360) {
+                    greenOrbAngle=0.0;
+                }
+
                 // Check events
                 while (SDL_PollEvent(&e)) {
                     if (e.type==SDL_QUIT || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) {
@@ -269,7 +293,6 @@ int main(int argc, char *argv[]) {
                     }
                     cube.handleEvent(e);
                 }
-
                 // Handle level interactions
                 cube.move(blocks, jumpOrbs, deltaTime);
                 cube.interact(blocks, spikes, jumpOrbs, jumpPads, quit);
@@ -278,7 +301,7 @@ int main(int argc, char *argv[]) {
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
                 SDL_RenderClear(gRenderer);
 
-                renderLevel(blocks, spikes, jumpOrbs, jumpPads);
+                renderLevel(blocks, spikes, jumpOrbs, jumpPads, greenOrbAngle);
 
                 cube.render();
 

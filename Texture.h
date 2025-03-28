@@ -3,8 +3,6 @@
 #include <string>
 #include <SDL.h>
 
-extern const int TILE_SIZE;
-
 class LTexture {
 public:
     // Constructor
@@ -32,7 +30,7 @@ public:
     void setAlpha(Uint8 alpha);
 
     // Render texture
-    void render(int x, int y, SDL_Rect *clip=nullptr, double angle=0.0, SDL_Point *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
+    void render(SDL_Rect renderQuad, SDL_Rect *clip=nullptr, double angle=0.0, SDL_Point *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
 
     // Get texture width + height
     int getWidth();
