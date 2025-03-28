@@ -4,6 +4,9 @@ Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
 
+### v0.021
+Added Jump orb and Jump pad sprites
+
 ### v0.02
 New features: Jump orbs and Jump pads
 - Yellow orb: Click to jump mid air
