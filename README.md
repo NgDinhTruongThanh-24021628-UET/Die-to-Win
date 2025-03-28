@@ -11,9 +11,9 @@ New features: Jump orbs and Jump pads
 - Green orb: Change gravity then jump mid air
 - Yellow pad: Jump really high when hit
 - Spider pad: Teleport to the ceiling when hit
-- Pink pad: Jump normal when hit  
-Showcase:
-https://github.com/user-attachments/assets/8d1bf8f6-87af-4492-b4f7-c6adc5ddf833
+- Pink pad: Jump normal when hit
+  
+Showcase: https://github.com/user-attachments/assets/8d1bf8f6-87af-4492-b4f7-c6adc5ddf833
 
 ### v0.01
 Features:
