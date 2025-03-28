@@ -92,8 +92,7 @@ void LTexture::setAlpha(Uint8 alpha) {
 }
 
 // Render texture
-void LTexture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) {
-    SDL_Rect renderQuad={x, y, TILE_SIZE, TILE_SIZE};
+void LTexture::render(SDL_Rect renderQuad, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) {
     if (clip!=nullptr) {
         renderQuad.w=clip->w;
         renderQuad.h=clip->h;
