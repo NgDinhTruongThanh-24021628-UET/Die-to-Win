@@ -9,8 +9,10 @@ extern LTexture blockTexture;
 
 // Block functions start
 
-Block::Block(int x, int y, int w, int h) {
+Block::Block(int x, int y, int w, int h, double a, const std::string &type) {
     hitbox={x, y, w, h};
+    angle=a;
+    blockType=type;
 }
 
 bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX,
@@ -76,13 +78,19 @@ bool Block::checkYCollision(int playerX, double &playerY, double &nextPlayerY,
 const SDL_Rect &Block::getHitbox() const {
     return hitbox;
 }
+const std::string &Block::getType() const {
+    return blockType;
+}
 
 // Block functions end
 
 // Spike functions start
 
-Spike::Spike(int x, int y, int w, int h) {
+Spike::Spike(int x, int y, int w, int h, double a, SDL_RendererFlip m, const std::string &type) {
     hitbox={x, y, w, h};
+    angle=a;
+    mirror=m;
+    spikeType=type;
 }
 
 bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int PLAYER_HEIGHT) const {
@@ -94,6 +102,9 @@ bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int
 
 const SDL_Rect &Spike::getHitbox() const {
     return hitbox;
+}
+const std::string &Spike::getType() const {
+    return spikeType;
 }
 
 // Spike functions end
@@ -118,6 +129,11 @@ const SDL_Rect &JumpOrb::getHitbox() const {
 
 const int JumpOrb::getType() const {
     return orbType;
+}
+
+void JumpOrb::updateRotation(double deltaTime) const {
+    rotationAngle+=180*deltaTime;
+    if (rotationAngle>=360) rotationAngle-=360;
 }
 
 // Jump orb functions end
