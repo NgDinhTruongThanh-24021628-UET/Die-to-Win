@@ -8,6 +8,8 @@ Requires Code::Blocks v20.03 to run as of right now
 - Added Block and Spike sprites
 - Improvement on level creation
 
+Showcase: https://github.com/user-attachments/assets/15e5e4d4-8128-4a35-aba1-044cf30de6d1
+
 ### v0.021
 Added Jump orb and Jump pad sprites
 
@@ -27,4 +29,3 @@ Features:
 - Basic graphics
 - Simple platformer physics
 - Game ends on death
-
