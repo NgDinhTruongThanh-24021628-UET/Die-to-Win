@@ -4,6 +4,10 @@ Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
 
+### v0.03
+- Added Block and Spike sprites
+- Improvement on level creation
+
 ### v0.021
 Added Jump orb and Jump pad sprites
 
