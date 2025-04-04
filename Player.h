@@ -34,6 +34,9 @@ public:
     // Handle mouse + keyboard events
     void handleEvent(SDL_Event &e);
 
+    // Allow player to enter 1-block-wide gap
+    void forcePushIntoGap(std::vector<Block> &blocks);
+
     // Move player, platform physics included, deltaTime for consistent physics
     void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, double deltaTime);
 
@@ -48,10 +51,10 @@ public:
     void render();
 
     // Get player hitbox, for spike collision
-    SDL_Rect getHitbox();
+    SDL_FRect getHitbox();
 
     // Get player hitbox, for spider pad interactions
-    SDL_Rect getSPadHitbox();
+    SDL_FRect getSPadHitbox();
 
     // Get gravity status
     bool getGravity();
@@ -68,6 +71,9 @@ private:
 
     // Check if player is moving left or right
     bool moveLeft, moveRight;
+
+    // Check if player is on a platform or hitting the ceiling
+    bool onPlatform, hitCeiling;
 
     // Check if gravity is reversed
     bool reverseGravity;

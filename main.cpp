@@ -354,7 +354,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
                  const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double deltaTime) {
     // Render orbs
     for (const auto &orb : jumpOrbs) {
-        SDL_Rect renderOrb={orb.getHitbox().x+TILE_SIZE/10, orb.getHitbox().y+TILE_SIZE/10, TILE_SIZE, TILE_SIZE};
+        SDL_FRect renderOrb={orb.getHitbox().x+TILE_SIZE/10, orb.getHitbox().y+TILE_SIZE/10, TILE_SIZE, TILE_SIZE};
         switch (orb.getType()) {
         case 'Y': // Yellow
             yellowOrbTexture.render(renderOrb);
@@ -371,7 +371,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
 
     // Render pads
     for (const auto &pad : jumpPads) {
-        SDL_Rect renderPad=pad.getHitbox();
+        SDL_FRect renderPad=pad.getHitbox();
         switch (pad.getType()) {
         case 'J': // Yellow
             yellowPadTexture.render(renderPad);
@@ -390,7 +390,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
         string type=block.getType();
         if (blockLookup.find(type)!=blockLookup.end()) {
             BlockInfo info=blockLookup[type];
-            SDL_Rect renderBlock=block.getHitbox();
+            SDL_FRect renderBlock=block.getHitbox();
             blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, SDL_FLIP_NONE);
         }
     }
@@ -400,7 +400,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
         string type=spike.getType();
         if (spikeLookup.find(type)!=spikeLookup.end()) {
             SpikeInfo info=spikeLookup[type];
-            SDL_Rect renderSpike={spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4, TILE_SIZE, TILE_SIZE};
+            SDL_FRect renderSpike={spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4, TILE_SIZE, TILE_SIZE};
             blockSheetTexture.render(renderSpike, &spikeClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
         }
     }
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
         }
         else {
             // Load level, will try to store move levels later
-            loadLevel("Level2.txt", blocks, spikes, jumpOrbs, jumpPads);
+            loadLevel("level2.txt", blocks, spikes, jumpOrbs, jumpPads);
 
             // Delta time, to keep physics consistent across all refresh rates
             Uint64 NOW=SDL_GetPerformanceCounter();

@@ -5,23 +5,21 @@
 #include "LevelObjs.h"
 
 extern SDL_Renderer *gRenderer;
-extern LTexture blockTexture;
 
 // Block functions start
 
-Block::Block(int x, int y, int w, int h, double a, const std::string &type) {
+Block::Block(float x, float y, float w, float h, double a, const std::string &type) {
     hitbox={x, y, w, h};
     angle=a;
     blockType=type;
 }
 
 bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX,
-                         double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const {
+                            double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const {
     bool collided=false;
 
     // From left side
-    if (playerVelX>0 &&
-        playerX+PLAYER_WIDTH<=hitbox.x &&
+    if (playerX+PLAYER_WIDTH<=hitbox.x &&
         nextPlayerX+PLAYER_WIDTH>=hitbox.x && // If player will go through platform
         playerY+PLAYER_HEIGHT>hitbox.y &&
         playerY<hitbox.y+hitbox.h) { // And will collide with platform
@@ -31,8 +29,7 @@ bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX
     }
 
     // From right side
-    if (playerVelX<0 &&
-        playerX>=hitbox.x+hitbox.w &&
+    if (playerX>=hitbox.x+hitbox.w &&
         nextPlayerX<=hitbox.x+hitbox.w && // If player will go through platform
         playerY+PLAYER_HEIGHT>hitbox.y &&
         playerY<hitbox.y+hitbox.h) { // And will collide with platform
@@ -44,38 +41,47 @@ bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX
     return collided;
 }
 
-bool Block::checkYCollision(int playerX, double &playerY, double &nextPlayerY,
-                            double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT, bool &onPlatform) const {
+bool Block::checkYCollision(double playerX, double &playerY, double &nextPlayerY,
+                            double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT,
+                            bool &onPlatform, bool &hitCeiling, bool reverseGravity) const {
     bool collided=false;
 
-    // Falling
-    if (playerVelY>0 &&
-        playerY+PLAYER_HEIGHT<=hitbox.y &&
+    // Y-axis downward movement
+    if (playerY+PLAYER_HEIGHT<=hitbox.y &&
         nextPlayerY+PLAYER_HEIGHT>=hitbox.y && // If player will go through platform
         playerX+PLAYER_WIDTH>hitbox.x &&
         playerX<hitbox.x+hitbox.w) { // And will collide with platform
 
         nextPlayerY=hitbox.y-PLAYER_HEIGHT;
         collided=true;
-        onPlatform=true;
+        if (!reverseGravity) { // Falling
+            onPlatform=true;
+        }
+        else { // Jumping up
+            hitCeiling=true;
+        }
     }
 
-    // Jumping up, hitting block
-    if (playerVelY<0 &&
-        playerY>=hitbox.y+hitbox.h &&
+    // Y-axis upward movement
+    if (playerY>=hitbox.y+hitbox.h &&
         nextPlayerY<=hitbox.y+hitbox.h && // If player will go through platform
         playerX+PLAYER_WIDTH>hitbox.x &&
         playerX<hitbox.x+hitbox.w) { // And will collide with platform
 
         nextPlayerY=hitbox.y+hitbox.h;
         collided=true;
-        onPlatform=true;
+        if (!reverseGravity) { // Jumping up
+            hitCeiling=true;
+        }
+        else { // Falling
+            onPlatform=true;
+        }
     }
 
     return collided;
 }
 
-const SDL_Rect &Block::getHitbox() const {
+const SDL_FRect &Block::getHitbox() const {
     return hitbox;
 }
 const std::string &Block::getType() const {
@@ -86,7 +92,7 @@ const std::string &Block::getType() const {
 
 // Spike functions start
 
-Spike::Spike(int x, int y, int w, int h, double a, SDL_RendererFlip m, const std::string &type) {
+Spike::Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type) {
     hitbox={x, y, w, h};
     angle=a;
     mirror=m;
@@ -100,7 +106,7 @@ bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int
            playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
-const SDL_Rect &Spike::getHitbox() const {
+const SDL_FRect &Spike::getHitbox() const {
     return hitbox;
 }
 const std::string &Spike::getType() const {
@@ -111,7 +117,7 @@ const std::string &Spike::getType() const {
 
 // Jump orb functions start
 
-JumpOrb::JumpOrb(int x, int y, int w, int h, char type) {
+JumpOrb::JumpOrb(float x, float y, float w, float h, char type) {
     hitbox={x, y, w, h};
     orbType=type;
 }
@@ -123,7 +129,7 @@ bool JumpOrb::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, i
            playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
-const SDL_Rect &JumpOrb::getHitbox() const {
+const SDL_FRect &JumpOrb::getHitbox() const {
     return hitbox;
 }
 
@@ -140,7 +146,7 @@ void JumpOrb::updateRotation(double deltaTime) const {
 
 // Jump pad functions start
 
-JumpPad::JumpPad(int x, int y, int w, int h, char type) {
+JumpPad::JumpPad(float x, float y, float w, float h, char type) {
     hitbox={x, y, w, h};
     padType=type;
 }
@@ -152,7 +158,7 @@ bool JumpPad::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, i
            playerY<=hitbox.y+hitbox.h; // AABB collision
 }
 
-const SDL_Rect &JumpPad::getHitbox() const {
+const SDL_FRect &JumpPad::getHitbox() const {
     return hitbox;
 }
 

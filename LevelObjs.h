@@ -8,48 +8,49 @@ extern const int TILE_SIZE;
 
 class Block {
 public:
-    Block(int x, int y, int w, int h, double a, const std::string &type);
+    Block(float x, float y, float w, float h, double a, const std::string &type);
 
     bool checkXCollision(double &playerX, double playerY, double &nextPlayerX,
                          double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
-    bool checkYCollision(int playerX, double &playerY, double &nextPlayerY,
-                         double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT, bool &onPlatform) const;
+    bool checkYCollision(double playerX, double &playerY, double &nextPlayerY,
+                         double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT,
+                         bool &onPlatform, bool &hitCeiling, bool reverseGravity) const;
 
-    const SDL_Rect &getHitbox() const;
+    const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
 
     double angle;
 
 private:
-    SDL_Rect hitbox;
+    SDL_FRect hitbox;
     std::string blockType;
 };
 
 class Spike {
 public:
-    Spike(int x, int y, int w, int h, double a, SDL_RendererFlip m, const std::string &type);
+    Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type);
 
     bool checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
-    const SDL_Rect &getHitbox() const;
+    const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
 
     double angle;
     SDL_RendererFlip mirror;
 
 private:
-    SDL_Rect hitbox;
+    SDL_FRect hitbox;
     std::string spikeType;
 };
 
 class JumpOrb {
 public:
-    JumpOrb(int x, int y, int w, int h, char type);
+    JumpOrb(float x, float y, float w, float h, char type);
 
     bool checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
-    const SDL_Rect &getHitbox() const;
+    const SDL_FRect &getHitbox() const;
 
     const int getType() const;
 
@@ -57,17 +58,17 @@ public:
     void updateRotation(double deltaTime) const;
 
 private:
-    SDL_Rect hitbox;
+    SDL_FRect hitbox;
     char orbType;
 };
 
 class JumpPad {
 public:
-    JumpPad(int x, int y, int w, int h, char type);
+    JumpPad(float x, float y, float w, float h, char type);
 
     bool checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
-    const SDL_Rect &getHitbox() const;
+    const SDL_FRect &getHitbox() const;
 
     const int getType() const;
 
@@ -77,7 +78,7 @@ public:
     bool canTrigger();
 
 private:
-    SDL_Rect hitbox;
+    SDL_FRect hitbox;
     char padType;
     bool padUsed=false;
 };
