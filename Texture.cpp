@@ -93,13 +93,6 @@ void LTexture::setAlpha(Uint8 alpha) {
 
 // Render texture
 void LTexture::render(SDL_FRect renderQuad, SDL_Rect *clip, double angle, SDL_FPoint *center, SDL_RendererFlip flip) {
-    if (clip!=nullptr) {
-        float scaleX=renderQuad.w/clip->w;
-        float scaleY=renderQuad.h/clip->h;
-
-        renderQuad.w=clip->w*scaleX;
-        renderQuad.h=clip->h*scaleY;
-    }
     SDL_RenderCopyExF(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
