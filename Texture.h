@@ -30,7 +30,7 @@ public:
     void setAlpha(Uint8 alpha);
 
     // Render texture
-    void render(SDL_Rect renderQuad, SDL_Rect *clip=nullptr, double angle=0.0, SDL_Point *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
+    void render(SDL_FRect renderQuad, SDL_Rect *clip=nullptr, double angle=0.0, SDL_FPoint *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
 
     // Get texture width + height
     int getWidth();

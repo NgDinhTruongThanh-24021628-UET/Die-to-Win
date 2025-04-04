@@ -17,6 +17,8 @@ Player::Player() {
     canJump=true;
     moveLeft=false;
     moveRight=false;
+    onPlatform=false;
+    hitCeiling=false;
     reverseGravity=false;
     coyoteTimer=0.0;
 }
@@ -72,6 +74,54 @@ void Player::handleEvent(SDL_Event &e) {
     }
 }
 
+// Allow player to enter 1-block-wide gap
+void Player::forcePushIntoGap(std::vector<Block> &blocks) {
+    for (size_t i=0; i<blocks.size()-1; i++) {
+        const SDL_FRect leftBlock=blocks[i].getHitbox();
+        const SDL_FRect rightBlock=blocks[i+1].getHitbox();
+        {
+            // Ensure blocks are on the same height
+            if (leftBlock.y!=rightBlock.y) continue;
+            // Ensure gap is close to the player
+            if (mPosX<leftBlock.x+leftBlock.w-5 || mPosX+PLAYER_WIDTH>rightBlock.x+5) continue; // X position check
+            if (mPosY-5>leftBlock.y+leftBlock.h || mPosY+PLAYER_HEIGHT+5<leftBlock.y) continue; // Y position check
+            // Ensure exactly 1-block-wide gap
+            if (rightBlock.x-(leftBlock.x+leftBlock.w)!=TILE_SIZE) continue;
+        }
+        // Normal gravity
+        if (!reverseGravity) {
+            // Check if player is falling into the gap
+            if (mPosY+PLAYER_HEIGHT==leftBlock.y && mVelX==0) {
+                // Force player inside the gap
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+            // Check if player is jumping into the gap
+            else if (mVelY<0) {
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+            // Edge case: Player is squeezed between floor and gap
+            else if (mPosY==leftBlock.y+leftBlock.h && isJumpHeld) {
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+        }
+        // Reversed gravity
+        else {
+            // Check if player is falling into the gap
+            if (mPosY==leftBlock.y+leftBlock.h && mVelX==0) {
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+            // Check if player is jumping into the gap
+            else if (mVelY>0) {
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+            // Edge case: Player is squeezed between floor and gap
+            else if (mPosY+PLAYER_HEIGHT==leftBlock.y && isJumpHeld) {
+                mPosX=leftBlock.x+leftBlock.w;
+            }
+        }
+    }
+}
+
 // Move player, platform physics included, deltaTime for consistent physics
 void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, double deltaTime) {
 
@@ -119,15 +169,17 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, do
     }
 
     double nextPosY=mPosY+mVelY*deltaTime;
-
-    bool onPlatform=false;
+    onPlatform=false;
+    hitCeiling=false;
 
     // Block collision detection (Y axis)
     for (const auto &block : blocks) {
-        if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT, onPlatform)) {
+        if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                                  onPlatform, hitCeiling, reverseGravity)) {
             mVelY=0.0;
         }
     }
+    forcePushIntoGap(blocks);
 
     /* Prevent out of bounds
     if (nextPosY+PLAYER_HEIGHT>=SCREEN_HEIGHT) {
@@ -180,16 +232,16 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, do
 void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> &spikes) {
 
     // Player hitboxes
-    SDL_Rect normalHitbox=getHitbox();
-    SDL_Rect SPadHitbox=getSPadHitbox();
+    SDL_FRect normalHitbox=getHitbox();
+    SDL_FRect SPadHitbox=getSPadHitbox();
 
     // Touch spider pad in normal gravity
     if (reverseGravity) {
         // Set up position to teleport to
-        int closestPosY=0;
+        float closestPosY=0;
 
         for (const auto &block : blocks) {
-            SDL_Rect blockHitbox=block.getHitbox();
+            SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
                 blockHitbox.y+blockHitbox.h<=normalHitbox.y) { // And below platform
@@ -201,7 +253,7 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
         }
 
         for (const auto &spike : spikes) {
-            SDL_Rect spikeHitbox=spike.getHitbox();
+            SDL_FRect spikeHitbox=spike.getHitbox();
             if (spikeHitbox.x<=SPadHitbox.x+SPadHitbox.w &&
                 spikeHitbox.x+spikeHitbox.w>=SPadHitbox.x && // If player hitbox inside spike
                 spikeHitbox.y+spikeHitbox.h<=SPadHitbox.y) { // And below spike
@@ -218,10 +270,10 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
     // Touch spider pad in reverse gravity
     else {
         // Set up position to teleport to
-        int closestPosY=SCREEN_HEIGHT;
+        float closestPosY=SCREEN_HEIGHT;
 
         for (const auto &block : blocks) {
-            SDL_Rect blockHitbox=block.getHitbox();
+            SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
                 blockHitbox.y>=normalHitbox.y+normalHitbox.h) { // And above platform
@@ -233,7 +285,7 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
         }
 
         for (const auto &spike : spikes) {
-            SDL_Rect spikeHitbox=spike.getHitbox();
+            SDL_FRect spikeHitbox=spike.getHitbox();
             if (spikeHitbox.x<=SPadHitbox.x+SPadHitbox.w &&
                 spikeHitbox.x+spikeHitbox.w>=SPadHitbox.x && // If player hitbox inside spike
                 spikeHitbox.y>=SPadHitbox.y+SPadHitbox.h) { // And above spike
@@ -343,19 +395,19 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
 
 // Render player to window
 void Player::render() {
-    SDL_Rect cube=getHitbox();
+    SDL_FRect cube=getHitbox();
     cubeTexture.render(cube, nullptr, 0.0, nullptr, (reverseGravity ? SDL_FLIP_VERTICAL : SDL_FLIP_NONE));
 }
 
 
 // Get player hitbox, for spike collision
-SDL_Rect Player::getHitbox() {
-    return {static_cast<int>(mPosX), static_cast<int>(mPosY), PLAYER_WIDTH, PLAYER_HEIGHT};
+SDL_FRect Player::getHitbox() {
+    return {static_cast<float>(mPosX), static_cast<float>(mPosY), static_cast<float>(PLAYER_WIDTH), static_cast<float>(PLAYER_HEIGHT)};
 }
 
 // Get player hitbox, for spider pad interactions
-SDL_Rect Player::getSPadHitbox() {
-    return {static_cast<int>(mPosX)+TILE_SIZE*7/20, static_cast<int>(mPosY)+TILE_SIZE*7/20, PLAYER_WIDTH*3/10, PLAYER_HEIGHT*3/10};
+SDL_FRect Player::getSPadHitbox() {
+    return {static_cast<float>(mPosX)+TILE_SIZE*7/20, static_cast<float>(mPosY)+TILE_SIZE*7/20, static_cast<float>(PLAYER_WIDTH)*3/10, static_cast<float>(PLAYER_HEIGHT)*3/10};
 }
 
 // Get gravity status

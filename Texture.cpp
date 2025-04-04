@@ -92,15 +92,15 @@ void LTexture::setAlpha(Uint8 alpha) {
 }
 
 // Render texture
-void LTexture::render(SDL_Rect renderQuad, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) {
+void LTexture::render(SDL_FRect renderQuad, SDL_Rect *clip, double angle, SDL_FPoint *center, SDL_RendererFlip flip) {
     if (clip!=nullptr) {
-        float scaleX=static_cast<float>(renderQuad.w)/clip->w;
-        float scaleY=static_cast<float>(renderQuad.h)/clip->h;
+        float scaleX=renderQuad.w/clip->w;
+        float scaleY=renderQuad.h/clip->h;
 
-        renderQuad.w=static_cast<int>(clip->w*scaleX);
-        renderQuad.h=static_cast<int>(clip->h*scaleY);
+        renderQuad.w=clip->w*scaleX;
+        renderQuad.h=clip->h*scaleY;
     }
-    SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+    SDL_RenderCopyExF(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
 // Get texture width + height
