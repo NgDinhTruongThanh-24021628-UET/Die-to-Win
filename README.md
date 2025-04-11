@@ -7,6 +7,7 @@ Requires Code::Blocks v20.03 to run as of right now
 ### v0.04
 - Fixed player clipping into block
 - Fixed player not being able to enter a 1-block-wide vertical gap
+  
 Showcase: https://github.com/user-attachments/assets/a8348823-47c6-41ea-8138-eec42d0c0103
 
 ### v0.03
