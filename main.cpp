@@ -22,10 +22,12 @@ SDL_Window *gWindow=nullptr;
 // Renderer
 SDL_Renderer *gRenderer=nullptr;
 
-// Font (for menu + instructions, later)
+// Font
 TTF_Font *gFont=nullptr;
 
 // Textures
+LTexture gTextTexture;
+
 LTexture cubeTexture;
 
 LTexture yellowOrbTexture;
@@ -83,6 +85,11 @@ bool init() {
                     cout << "SDL_image could not initialize. " << IMG_GetError() << endl;
                     success=false;
                 }
+
+                if (TTF_Init()==-1) {
+                    cout << "SDL_ttf could not initialize. " << TTF_GetError() << endl;
+                    success=false;
+                }
             }
         }
     }
@@ -93,6 +100,20 @@ bool init() {
 // Load sprites
 bool loadMedia() {
     bool success=true;
+
+    gFont=TTF_OpenFont("AmaticSC-Bold.ttf", 120);
+    if (gFont==nullptr) {
+        cout << "Failed to load font. " << TTF_GetError() << endl;
+        success=false;
+    }
+    else {
+        SDL_Color textColor={255, 255, 255};
+        if (!gTextTexture.loadFromRenderedText("Congratulations", textColor)) {
+            cout << "Failed to render text texture." << endl;
+            success=false;
+        }
+    }
+
     if (!blockSheetTexture.loadFromFile("Sprites/Block and Spike.png")) {
         cout << "Failed to load block and spike texture." << endl;
         success=false;
@@ -155,10 +176,12 @@ bool loadMedia() {
         spikeClips[5].w=160;
         spikeClips[5].h=160;
     }
+
     if (!cubeTexture.loadFromFile("Sprites/Player.png")) {
         cout << "Failed to load cube texture." << endl;
         success=false;
     }
+
     if (!yellowOrbTexture.loadFromFile("Sprites/Yellow Orb.png") ||
         !blueOrbTexture.loadFromFile("Sprites/Blue Orb.png") ||
         !greenOrbTexture.loadFromFile("Sprites/Green Orb.png")) {
@@ -166,6 +189,7 @@ bool loadMedia() {
         cout << "Failed to load orb texture." << endl;
         success=false;
     }
+
     if (!yellowPadTexture.loadFromFile("Sprites/Yellow Pad.png") ||
         !spiderPadTexture.loadFromFile("Sprites/Spider Pad.png") ||
         !pinkPadTexture.loadFromFile("Sprites/Pink Pad.png")) {
@@ -173,6 +197,7 @@ bool loadMedia() {
         cout << "Failed to load pad texture." << endl;
         success=false;
     }
+
     return success;
 }
 
@@ -306,6 +331,8 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
         return;
     }
 
+    blocks.clear(); spikes.clear(); jumpOrbs.clear(); jumpPads.clear();
+
     // Read file and store objects
     string tile;
     int row=0;
@@ -406,6 +433,14 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
     }
 }
 
+// Game states
+enum GameState {
+    STATE_PLAYING,
+    STATE_START,
+    STATE_WIN,
+    STATE_RESTART
+};
+
 int main(int argc, char *argv[]) {
     if (!init()) {
         cout << "Failed to initialize." << endl;
@@ -423,9 +458,13 @@ int main(int argc, char *argv[]) {
             Uint64 LAST=0;
             double deltaTime=0;
 
+            Player cube;
+            GameState currentState=STATE_PLAYING;
+            static double fadeAlpha=0;
+            bool dead=false;
+
             bool quit=false;
             SDL_Event e;
-            Player cube;
 
             // Running
             while (!quit) {
@@ -440,27 +479,64 @@ int main(int argc, char *argv[]) {
                     if (e.type==SDL_QUIT || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) {
                         quit=true;
                     }
-                    cube.handleEvent(e);
+                    else if (currentState==STATE_WIN && e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_r) {
+                        currentState=STATE_RESTART;
+                    }
+                    else if (currentState==STATE_PLAYING) {
+                        cube.handleEvent(e);
+                    }
                 }
-                // Handle level interactions
-                cube.move(blocks, jumpOrbs, deltaTime);
-                cube.interact(blocks, spikes, jumpOrbs, jumpPads, quit);
 
-                // Rendering
+                // Restart after win
+                if (currentState==STATE_RESTART) {
+                    dead=false;
+                    fadeAlpha=0;
+                    cube.reset();
+                    loadLevel("level2.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    currentState=STATE_PLAYING;
+                    continue;
+                }
+
+                // Playing
+                if (currentState==STATE_PLAYING) {
+                    // Handle player interactions
+                    cube.move(blocks, jumpOrbs, deltaTime);
+                    cube.interact(blocks, spikes, jumpOrbs, jumpPads, dead);
+                    if (dead) {
+                        currentState=STATE_WIN;
+                    }
+                }
+
+                // Render
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
                 SDL_RenderClear(gRenderer);
-
                 renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
-
                 cube.render();
+
+                // Win
+                if (currentState==STATE_WIN) {
+                    if (fadeAlpha<180) {
+                        fadeAlpha+=200*deltaTime;
+                        if (fadeAlpha>180) {
+                            fadeAlpha=180;
+                        }
+                    }
+
+                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
+                    SDL_FRect dimOverlay={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
+
+                    SDL_FRect rect={(SCREEN_WIDTH-gTextTexture.getWidth())/2, (SCREEN_HEIGHT-gTextTexture.getHeight())/2, gTextTexture.getWidth(), gTextTexture.getHeight()};
+                    gTextTexture.setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
+                    gTextTexture.render(rect);
+                }
 
                 SDL_RenderPresent(gRenderer);
             }
         }
-        SDL_Delay(200);
     }
     close();
-    cout << "You win";
     return 0;
 }
 

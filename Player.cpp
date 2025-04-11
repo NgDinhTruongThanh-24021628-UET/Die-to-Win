@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL.h>
+#include <cmath>
 #include "Player.h"
 #include "Texture.h"
 #include "LevelObjs.h"
@@ -9,6 +10,21 @@ extern LTexture cubeTexture;
 
 // Constructor
 Player::Player() {
+    mPosX=TILE_SIZE-TILE_SIZE*11/18;
+    mPosY=SCREEN_HEIGHT-PLAYER_HEIGHT-TILE_SIZE*9/18;
+    mVelX=0;
+    mVelY=0;
+    isJumpHeld=false;
+    canJump=true;
+    moveLeft=false;
+    moveRight=false;
+    onPlatform=false;
+    hitCeiling=false;
+    reverseGravity=false;
+    coyoteTimer=0.0;
+}
+
+void Player::reset() {
     mPosX=TILE_SIZE-TILE_SIZE*11/18;
     mPosY=SCREEN_HEIGHT-PLAYER_HEIGHT-TILE_SIZE*9/18;
     mVelX=0;
@@ -76,6 +92,7 @@ void Player::handleEvent(SDL_Event &e) {
 
 // Allow player to enter 1-block-wide gap
 void Player::forcePushIntoGap(std::vector<Block> &blocks) {
+    int limit=ceil(TILE_SIZE/double(15.0));
     for (size_t i=0; i<blocks.size()-1; i++) {
         const SDL_FRect leftBlock=blocks[i].getHitbox();
         const SDL_FRect rightBlock=blocks[i+1].getHitbox();
@@ -83,8 +100,8 @@ void Player::forcePushIntoGap(std::vector<Block> &blocks) {
             // Ensure blocks are on the same height
             if (leftBlock.y!=rightBlock.y) continue;
             // Ensure gap is close to the player
-            if (mPosX<leftBlock.x+leftBlock.w-5 || mPosX+PLAYER_WIDTH>rightBlock.x+5) continue; // X position check
-            if (mPosY-5>leftBlock.y+leftBlock.h || mPosY+PLAYER_HEIGHT+5<leftBlock.y) continue; // Y position check
+            if (mPosX<leftBlock.x+leftBlock.w-limit || mPosX+PLAYER_WIDTH>rightBlock.x+limit) continue; // X position check
+            if (mPosY-limit>leftBlock.y+leftBlock.h || mPosY+PLAYER_HEIGHT+limit<leftBlock.y) continue; // Y position check
             // Ensure exactly 1-block-wide gap
             if (rightBlock.x-(leftBlock.x+leftBlock.w)!=TILE_SIZE) continue;
         }
@@ -302,7 +319,7 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
 
 // Jump orb and jump pad interactions
 void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
-                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, bool &quit) {
+                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, bool &dead) {
 
     // Orb interactions
     for (auto &orb : jumpOrbs) {
@@ -388,7 +405,7 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
     // Spike collision
     for (const auto &spike : spikes) {
         if (spike.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
-            quit=true;
+            dead=true;
         }
     }
 }

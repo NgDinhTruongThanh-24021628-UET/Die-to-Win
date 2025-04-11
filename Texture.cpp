@@ -97,9 +97,9 @@ void LTexture::render(SDL_FRect renderQuad, SDL_Rect *clip, double angle, SDL_FP
 }
 
 // Get texture width + height
-int LTexture::getWidth() {
+float LTexture::getWidth() {
     return mWidth;
 }
-int LTexture::getHeight() {
+float LTexture::getHeight() {
     return mHeight;
 }

@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1743776282 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1744389267 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -13,14 +13,15 @@
 	"Texture.h"
 	"LevelObjs.h"
 
-1743776624 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1744388442 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 
-1743776624 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1744388442 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
+	<cmath>
 	"Player.h"
 	"Texture.h"
 	"LevelObjs.h"
@@ -41,7 +42,7 @@
 
 1742297023 c:\users\truong thanh\documents\sdl projects\die to win\globals.h
 
-1743419939 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
+1744371611 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
 	<iostream>
 	<string>
 	<SDL.h>
@@ -49,7 +50,7 @@
 	<SDL_ttf.h>
 	"Texture.h"
 
-1743419939 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
+1744371604 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
 	<string>
 	<SDL.h>
 
@@ -63,12 +64,12 @@
 	<iostream>
 	<SDL.h>
 
-1743765699 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1744369571 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 
-1743775795 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1744369571 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<SDL.h>
 	<vector>
