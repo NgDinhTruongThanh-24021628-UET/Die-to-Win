@@ -2,6 +2,7 @@
 
 #include <string>
 #include <SDL.h>
+#include <SDL_ttf.h>
 
 class LTexture {
 public:
@@ -15,7 +16,7 @@ public:
     bool loadFromFile(std::string path);
 
     // Load texture from text
-    bool loadFromRenderedText(std::string textureText, SDL_Color textColor);
+    bool loadFromRenderedText(std::string textureText, SDL_Color textColor, TTF_Font *font);
 
     // Destroy texture
     void free();

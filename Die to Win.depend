@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1744389267 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1744430567 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -42,7 +42,7 @@
 
 1742297023 c:\users\truong thanh\documents\sdl projects\die to win\globals.h
 
-1744371611 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
+1744430567 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
 	<iostream>
 	<string>
 	<SDL.h>
@@ -50,9 +50,10 @@
 	<SDL_ttf.h>
 	"Texture.h"
 
-1744371604 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
+1744430567 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
 	<string>
 	<SDL.h>
+	<SDL_ttf.h>
 
 1742527690 source:c:\users\truong thanh\documents\sdl projects\die to win\objects.cpp
 	<iostream>
