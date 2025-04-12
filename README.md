@@ -4,7 +4,9 @@ Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
 ### v0.05
-- Added end screen
+- Added start and end screen
+
+Showcase: https://github.com/user-attachments/assets/f3634d4f-80df-4832-a2c7-80cdd01d844e
 
 ### v0.04
 - Fixed player clipping into block
