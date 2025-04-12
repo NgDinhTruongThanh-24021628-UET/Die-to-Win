@@ -22,10 +22,16 @@ SDL_Window *gWindow=nullptr;
 // Renderer
 SDL_Renderer *gRenderer=nullptr;
 
-// Font (for menu + instructions, later)
-TTF_Font *gFont=nullptr;
+// Font
+TTF_Font *gSmallFont=nullptr;
+TTF_Font *gMediumFont=nullptr;
+TTF_Font *gLargeFont=nullptr;
 
 // Textures
+LTexture winMsgTexture;
+LTexture gameTitleTexture;
+LTexture instructionTexture[2];
+
 LTexture cubeTexture;
 
 LTexture yellowOrbTexture;
@@ -83,6 +89,12 @@ bool init() {
                     cout << "SDL_image could not initialize. " << IMG_GetError() << endl;
                     success=false;
                 }
+
+                // Initialize SDL_ttf.h
+                if (TTF_Init()==-1) {
+                    cout << "SDL_ttf could not initialize. " << TTF_GetError() << endl;
+                    success=false;
+                }
             }
         }
     }
@@ -90,75 +102,63 @@ bool init() {
     return success;
 }
 
-// Load sprites
+// Load font + sprites
 bool loadMedia() {
     bool success=true;
+
+    gSmallFont=TTF_OpenFont("AmaticSC-Bold.ttf", 40);
+    gMediumFont=TTF_OpenFont("AmaticSC-Bold.ttf", 72);
+    gLargeFont=TTF_OpenFont("AmaticSC-Bold.ttf", 120);
+    if (gSmallFont==nullptr || gMediumFont==nullptr || gLargeFont==nullptr) {
+        cout << "Failed to load font. " << TTF_GetError() << endl;
+        success=false;
+    }
+    else {
+        SDL_Color textColor={255, 255, 255};
+        if (!instructionTexture[0].loadFromRenderedText("Press anywhere to play", textColor, gMediumFont) ||
+            !instructionTexture[1].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
+            !gameTitleTexture.loadFromRenderedText("Die to Win", textColor, gLargeFont) ||
+            !winMsgTexture.loadFromRenderedText("Congratulations", textColor, gLargeFont)) {
+            cout << "Failed to render text texture." << endl;
+            success=false;
+        }
+    }
+
     if (!blockSheetTexture.loadFromFile("Sprites/Block and Spike.png")) {
         cout << "Failed to load block and spike texture." << endl;
         success=false;
     }
     else {
         // Corner block, top left corner by default
-        blockClips[0].x=0;
-        blockClips[0].y=0;
-        blockClips[0].w=160;
-        blockClips[0].h=160;
+        blockClips[0]={0, 0, 160, 160};
 
         // Wall block, horizontal by default
-        blockClips[1].x=160;
-        blockClips[1].y=0;
-        blockClips[1].w=160;
-        blockClips[1].h=160;
+        blockClips[1]={160, 0, 160, 160};
 
         // T-block, wall side facing left by default
-        blockClips[2].x=0;
-        blockClips[2].y=160;
-        blockClips[2].w=160;
-        blockClips[2].h=160;
+        blockClips[2]={0, 160, 160, 160};
 
         // Platform tip block, facing up by default
-        blockClips[3].x=160;
-        blockClips[3].y=160;
-        blockClips[3].w=160;
-        blockClips[3].h=160;
+        blockClips[3]={160, 160, 160, 160};
 
         // Platform tip[0] with spike on top[1], platform tip facing left, spike facing up by default
-        spikeClips[0].x=320;
-        spikeClips[0].y=160;
-        spikeClips[0].w=160;
-        spikeClips[0].h=160;
-
-        spikeClips[1].x=320;
-        spikeClips[1].y=0;
-        spikeClips[1].w=160;
-        spikeClips[1].h=160;
+        spikeClips[0]={320, 160, 160, 160};
+        spikeClips[1]={320, 0, 160, 160};
 
         // Platform[2] with spike on top[3], spike facing up by default
-        spikeClips[2].x=480;
-        spikeClips[2].y=160;
-        spikeClips[2].w=160;
-        spikeClips[2].h=160;
-
-        spikeClips[3].x=480;
-        spikeClips[3].y=0;
-        spikeClips[3].w=160;
-        spikeClips[3].h=160;
+        spikeClips[2]={480, 160, 160, 160};
+        spikeClips[3]={480, 0, 160, 160};
 
         // Platform[4] with big spike on top[5], spike facing up by default
-        spikeClips[4].x=640;
-        spikeClips[4].y=160;
-        spikeClips[4].w=160;
-        spikeClips[4].h=160;
-
-        spikeClips[5].x=640;
-        spikeClips[5].y=0;
-        spikeClips[5].w=160;
-        spikeClips[5].h=160;
+        spikeClips[4]={640, 160, 160, 160};
+        spikeClips[5]={640, 0, 160, 160};
     }
+
     if (!cubeTexture.loadFromFile("Sprites/Player.png")) {
         cout << "Failed to load cube texture." << endl;
         success=false;
     }
+
     if (!yellowOrbTexture.loadFromFile("Sprites/Yellow Orb.png") ||
         !blueOrbTexture.loadFromFile("Sprites/Blue Orb.png") ||
         !greenOrbTexture.loadFromFile("Sprites/Green Orb.png")) {
@@ -166,6 +166,7 @@ bool loadMedia() {
         cout << "Failed to load orb texture." << endl;
         success=false;
     }
+
     if (!yellowPadTexture.loadFromFile("Sprites/Yellow Pad.png") ||
         !spiderPadTexture.loadFromFile("Sprites/Spider Pad.png") ||
         !pinkPadTexture.loadFromFile("Sprites/Pink Pad.png")) {
@@ -173,6 +174,7 @@ bool loadMedia() {
         cout << "Failed to load pad texture." << endl;
         success=false;
     }
+
     return success;
 }
 
@@ -181,12 +183,28 @@ void close() {
     // Deal with textures
     blockSheetTexture.free();
     cubeTexture.free();
+
     yellowOrbTexture.free();
     blueOrbTexture.free();
     greenOrbTexture.free();
+
     yellowPadTexture.free();
     spiderPadTexture.free();
     pinkPadTexture.free();
+
+    for (int i=0; i<2; i++) {
+        instructionTexture[i].free();
+    }
+    gameTitleTexture.free();
+    winMsgTexture.free();
+
+    // Deal with fonts
+    TTF_CloseFont(gSmallFont);
+    gSmallFont=nullptr;
+    TTF_CloseFont(gMediumFont);
+    gMediumFont=nullptr;
+    TTF_CloseFont(gLargeFont);
+    gLargeFont=nullptr;
 
     // Deal with window & renderer
     SDL_DestroyRenderer(gRenderer);
@@ -306,6 +324,8 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
         return;
     }
 
+    blocks.clear(); spikes.clear(); jumpOrbs.clear(); jumpPads.clear();
+
     // Read file and store objects
     string tile;
     int row=0;
@@ -406,6 +426,14 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
     }
 }
 
+// Game status
+enum GameStatus {
+    PLAYING,
+    START,
+    WIN,
+    RESTART
+};
+
 int main(int argc, char *argv[]) {
     if (!init()) {
         cout << "Failed to initialize." << endl;
@@ -423,9 +451,14 @@ int main(int argc, char *argv[]) {
             Uint64 LAST=0;
             double deltaTime=0;
 
+            Player cube;
+            GameStatus currentStatus=START;
+            static double fadeAlpha=180;
+            bool dead=false;
+            SDL_FRect instructionRect[2];
+
             bool quit=false;
             SDL_Event e;
-            Player cube;
 
             // Running
             while (!quit) {
@@ -440,27 +473,97 @@ int main(int argc, char *argv[]) {
                     if (e.type==SDL_QUIT || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) {
                         quit=true;
                     }
-                    cube.handleEvent(e);
+                    else if (currentStatus==START && (e.type==SDL_KEYDOWN || e.type==SDL_MOUSEBUTTONDOWN)) {
+                        currentStatus=PLAYING;
+                        fadeAlpha=0;
+                    }
+                    else if (currentStatus==WIN && e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_r) {
+                        currentStatus=RESTART;
+                    }
+                    else if (currentStatus==PLAYING) {
+                        cube.handleEvent(e);
+                    }
                 }
-                // Handle level interactions
-                cube.move(blocks, jumpOrbs, deltaTime);
-                cube.interact(blocks, spikes, jumpOrbs, jumpPads, quit);
 
-                // Rendering
+                // Render game
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
                 SDL_RenderClear(gRenderer);
-
                 renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
-
                 cube.render();
+
+                // Start
+                if (currentStatus==START) {
+                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
+                    SDL_FRect dimOverlay={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
+
+                    SDL_FRect gameTitleRect={(SCREEN_WIDTH-gameTitleTexture.getWidth())/2,
+                                             (SCREEN_HEIGHT-gameTitleTexture.getHeight()-instructionTexture[0].getHeight())/2,
+                                             gameTitleTexture.getWidth(),
+                                             gameTitleTexture.getHeight()};
+                    gameTitleTexture.render(gameTitleRect);
+
+                    instructionRect[0]={(SCREEN_WIDTH-instructionTexture[0].getWidth())/2,
+                                        gameTitleRect.y+gameTitleRect.h,
+                                        instructionTexture[0].getWidth(),
+                                        instructionTexture[0].getHeight()};
+                    instructionTexture[0].render(instructionRect[0]);
+                }
+
+                // Restart after win
+                else if (currentStatus==RESTART) {
+                    dead=false;
+                    fadeAlpha=0;
+                    cube.reset();
+                    loadLevel("level2.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    currentStatus=PLAYING;
+                    continue;
+                }
+
+                // Playing
+                else if (currentStatus==PLAYING) {
+                    // Handle player interactions
+                    cube.move(blocks, jumpOrbs, deltaTime);
+                    cube.interact(blocks, spikes, jumpOrbs, jumpPads, dead);
+                    if (dead) {
+                        currentStatus=WIN;
+                    }
+                }
+
+                // Win
+                else if (currentStatus==WIN) {
+                    if (fadeAlpha<180) {
+                        fadeAlpha+=400*deltaTime;
+                        if (fadeAlpha>180) {
+                            fadeAlpha=180;
+                        }
+                    }
+
+                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
+                    SDL_FRect dimOverlay={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
+
+                    SDL_FRect winMsgRect={(SCREEN_WIDTH-winMsgTexture.getWidth())/2,
+                                          (SCREEN_HEIGHT-winMsgTexture.getHeight()-instructionTexture[1].getHeight())/2,
+                                          winMsgTexture.getWidth(),
+                                          winMsgTexture.getHeight()};
+                    winMsgTexture.setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
+                    winMsgTexture.render(winMsgRect);
+
+                    instructionRect[1]={(SCREEN_WIDTH-instructionTexture[1].getWidth())/2,
+                                        winMsgRect.y+winMsgRect.h,
+                                        instructionTexture[1].getWidth(),
+                                        instructionTexture[1].getHeight()};
+                    instructionTexture[1].setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
+                    instructionTexture[1].render(instructionRect[1]);
+                }
 
                 SDL_RenderPresent(gRenderer);
             }
         }
-        SDL_Delay(200);
     }
     close();
-    cout << "You win";
     return 0;
 }
-

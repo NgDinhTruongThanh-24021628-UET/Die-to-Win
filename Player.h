@@ -17,7 +17,7 @@ public:
     const int PLAYER_HEIGHT=TILE_SIZE;
 
     // Horizontal velocity
-    static constexpr double X_VELOCITY=500.0;
+    static constexpr double X_VELOCITY=490.0;
 
     // Initial velocity when jump
     static constexpr double JUMP_VELOCITY=-1390.0;
@@ -30,6 +30,9 @@ public:
 
     // Constructor
     Player();
+
+    // Reset player status
+    void reset();
 
     // Handle mouse + keyboard events
     void handleEvent(SDL_Event &e);

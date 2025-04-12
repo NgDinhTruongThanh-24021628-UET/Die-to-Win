@@ -7,7 +7,6 @@
 using namespace std;
 
 extern SDL_Renderer *gRenderer;
-extern TTF_Font *gFont;
 
 // Constructor
 LTexture::LTexture() {
@@ -46,9 +45,9 @@ bool LTexture::loadFromFile(string path) {
 }
 
 // Load texture from text
-bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor) {
+bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor, TTF_Font *font) {
     free();
-    SDL_Surface *textSurface=TTF_RenderText_Solid(gFont, textureText.c_str(), textColor);
+    SDL_Surface *textSurface=TTF_RenderText_Solid(font, textureText.c_str(), textColor);
     if (textSurface==nullptr) {
         cout << "Unable to render text surface. " << TTF_GetError() << endl;
     }
@@ -97,9 +96,9 @@ void LTexture::render(SDL_FRect renderQuad, SDL_Rect *clip, double angle, SDL_FP
 }
 
 // Get texture width + height
-int LTexture::getWidth() {
+float LTexture::getWidth() {
     return mWidth;
 }
-int LTexture::getHeight() {
+float LTexture::getHeight() {
     return mHeight;
 }
