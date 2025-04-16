@@ -22,7 +22,7 @@ public:
     void free();
 
     // Set color
-    void setColor(Uint8 red, Uint8 green, Uint8 blue);
+    void setColor(SDL_Color color);
 
     // Set blend mode
     void setBlendMode(SDL_BlendMode blending);
@@ -32,6 +32,7 @@ public:
 
     // Render texture
     void render(SDL_FRect renderQuad, SDL_Rect *clip=nullptr, double angle=0.0, SDL_FPoint *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
+    void render(float x, float y, SDL_Rect *clip=nullptr, double angle=0.0, SDL_FPoint *center=nullptr, SDL_RendererFlip flip=SDL_FLIP_NONE);
 
     // Get texture width + height
     float getWidth();

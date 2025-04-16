@@ -30,7 +30,7 @@ TTF_Font *gLargeFont=nullptr;
 // Textures
 LTexture winMsgTexture;
 LTexture gameTitleTexture;
-LTexture instructionTexture[2];
+LTexture instructionTexture[1000];
 
 LTexture cubeTexture;
 
@@ -41,6 +41,18 @@ LTexture greenOrbTexture;
 LTexture yellowPadTexture;
 LTexture spiderPadTexture;
 LTexture pinkPadTexture;
+
+enum Color { PINK=0, BLUE, YELLOW, DARK, TOTAL_COLOR };
+const int BG_TOTAL_COLOR=4;
+SDL_Color bgColor[BG_TOTAL_COLOR]={
+    {0xF6, 0x4A, 0x8A},
+    {0x31, 0x8C, 0xE7},
+    {0xF4, 0xC4, 0x30},
+    {0x2A, 0x34, 0x39}
+};
+
+enum Background { BLANK=0, STRIPE, TETRIS, TOTAL_BG };
+LTexture backgroundTexture[TOTAL_BG];
 
 const int NUMBER_OF_BLOCKS=4;
 const int NUMBER_OF_SPIKES=6;
@@ -106,17 +118,21 @@ bool init() {
 bool loadMedia() {
     bool success=true;
 
-    gSmallFont=TTF_OpenFont("AmaticSC-Bold.ttf", 40);
-    gMediumFont=TTF_OpenFont("AmaticSC-Bold.ttf", 72);
-    gLargeFont=TTF_OpenFont("AmaticSC-Bold.ttf", 120);
+    gSmallFont=TTF_OpenFont("Resources/AmaticSC-Bold.ttf", 40);
+    gMediumFont=TTF_OpenFont("Resources/AmaticSC-Bold.ttf", 72);
+    gLargeFont=TTF_OpenFont("Resources/AmaticSC-Bold.ttf", 120);
     if (gSmallFont==nullptr || gMediumFont==nullptr || gLargeFont==nullptr) {
         cout << "Failed to load font. " << TTF_GetError() << endl;
         success=false;
     }
     else {
         SDL_Color textColor={255, 255, 255};
-        if (!instructionTexture[0].loadFromRenderedText("Press anywhere to play", textColor, gMediumFont) ||
-            !instructionTexture[1].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
+        if (!instructionTexture[0].loadFromRenderedText("Press any key to start", textColor, gMediumFont) ||
+            !instructionTexture[1].loadFromRenderedText("Press left/right to customize background", textColor, gMediumFont) ||
+            !instructionTexture[2].loadFromRenderedText("Press left/right to customize color", textColor, gMediumFont) ||
+            !instructionTexture[3].loadFromRenderedText("Press up/down to select settings", textColor, gMediumFont) ||
+            !instructionTexture[4].loadFromRenderedText("Press Enter to finish", textColor, gMediumFont) ||
+            !instructionTexture[100].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
             !gameTitleTexture.loadFromRenderedText("Die to Win", textColor, gLargeFont) ||
             !winMsgTexture.loadFromRenderedText("Congratulations", textColor, gLargeFont)) {
             cout << "Failed to render text texture." << endl;
@@ -124,7 +140,7 @@ bool loadMedia() {
         }
     }
 
-    if (!blockSheetTexture.loadFromFile("Sprites/Block and Spike.png")) {
+    if (!blockSheetTexture.loadFromFile("Resources/Block and Spike.png")) {
         cout << "Failed to load block and spike texture." << endl;
         success=false;
     }
@@ -154,24 +170,32 @@ bool loadMedia() {
         spikeClips[5]={640, 0, 160, 160};
     }
 
-    if (!cubeTexture.loadFromFile("Sprites/Player.png")) {
+    if (!cubeTexture.loadFromFile("Resources/Player.png")) {
         cout << "Failed to load cube texture." << endl;
         success=false;
     }
 
-    if (!yellowOrbTexture.loadFromFile("Sprites/Yellow Orb.png") ||
-        !blueOrbTexture.loadFromFile("Sprites/Blue Orb.png") ||
-        !greenOrbTexture.loadFromFile("Sprites/Green Orb.png")) {
+    if (!yellowOrbTexture.loadFromFile("Resources/Yellow Orb.png") ||
+        !blueOrbTexture.loadFromFile("Resources/Blue Orb.png") ||
+        !greenOrbTexture.loadFromFile("Resources/Green Orb.png")) {
 
         cout << "Failed to load orb texture." << endl;
         success=false;
     }
 
-    if (!yellowPadTexture.loadFromFile("Sprites/Yellow Pad.png") ||
-        !spiderPadTexture.loadFromFile("Sprites/Spider Pad.png") ||
-        !pinkPadTexture.loadFromFile("Sprites/Pink Pad.png")) {
+    if (!yellowPadTexture.loadFromFile("Resources/Yellow Pad.png") ||
+        !spiderPadTexture.loadFromFile("Resources/Spider Pad.png") ||
+        !pinkPadTexture.loadFromFile("Resources/Pink Pad.png")) {
 
         cout << "Failed to load pad texture." << endl;
+        success=false;
+    }
+
+    if (!backgroundTexture[STRIPE].loadFromFile("Resources/Stripe BG.png") ||
+        !backgroundTexture[TETRIS].loadFromFile("Resources/Tetris BG.png") ||
+        !backgroundTexture[BLANK].loadFromFile("Resources/Blank BG.png")) {
+
+        cout << "Failed to load background texture." << endl;
         success=false;
     }
 
@@ -191,6 +215,8 @@ void close() {
     yellowPadTexture.free();
     spiderPadTexture.free();
     pinkPadTexture.free();
+
+    backgroundTexture[0].free();
 
     for (int i=0; i<2; i++) {
         instructionTexture[i].free();
@@ -428,10 +454,18 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
 
 // Game status
 enum GameStatus {
-    PLAYING,
+    PLAYING=0,
     START,
+    SETTINGS,
     WIN,
-    RESTART
+    RESTART,
+    TOTAL_STATUS
+};
+
+enum GameSetting {
+    SETTING_BG=0,
+    SETTING_COLOR,
+    TOTAL_SETTING
 };
 
 int main(int argc, char *argv[]) {
@@ -444,7 +478,7 @@ int main(int argc, char *argv[]) {
         }
         else {
             // Load level, will try to store move levels later
-            loadLevel("level2.txt", blocks, spikes, jumpOrbs, jumpPads);
+            loadLevel("Resources/Levels/Level2.txt", blocks, spikes, jumpOrbs, jumpPads);
 
             // Delta time, to keep physics consistent across all refresh rates
             Uint64 NOW=SDL_GetPerformanceCounter();
@@ -452,10 +486,13 @@ int main(int argc, char *argv[]) {
             double deltaTime=0;
 
             Player cube;
-            GameStatus currentStatus=START;
+            GameStatus currentStatus=SETTINGS;
+            GameSetting currentSetting=SETTING_BG;
+            Background selectedBG=BLANK;
+            Color selectedColor=PINK;
             static double fadeAlpha=180;
             bool dead=false;
-            SDL_FRect instructionRect[2];
+            float scrollingOffset=0;
 
             bool quit=false;
             SDL_Event e;
@@ -468,61 +505,63 @@ int main(int argc, char *argv[]) {
                 deltaTime=double((NOW-LAST)*1000)/SDL_GetPerformanceFrequency();
                 deltaTime/=1000.0; // Convert to seconds
 
-                // Check events
+                // Handle game events
                 while (SDL_PollEvent(&e)) {
-                    if (e.type==SDL_QUIT || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) {
+                    if (e.type==SDL_QUIT) {
                         quit=true;
+                    }
+                    else if (currentStatus==SETTINGS && e.type==SDL_KEYDOWN) {
+                        switch (e.key.keysym.sym) {
+                        case SDLK_UP:
+                        case SDLK_w:
+                            currentSetting=static_cast<GameSetting>((currentSetting+1)%TOTAL_SETTING);
+                            break;
+                        case SDLK_DOWN:
+                        case SDLK_s:
+                            currentSetting=static_cast<GameSetting>((currentSetting-1+TOTAL_SETTING)&TOTAL_SETTING);
+                            break;
+                        case SDLK_LEFT:
+                        case SDLK_a:
+                            if (currentSetting==SETTING_BG) {
+                                selectedBG=static_cast<Background>((selectedBG-1+TOTAL_BG)%TOTAL_BG);
+                            }
+                            else if (currentSetting==SETTING_COLOR) {
+                                selectedColor=static_cast<Color>((selectedColor-1+TOTAL_COLOR)%TOTAL_COLOR);
+                            }
+                            break;
+                        case SDLK_RIGHT:
+                        case SDLK_d:
+                            if (currentSetting==SETTING_BG) {
+                                selectedBG=static_cast<Background>((selectedBG+1)%TOTAL_BG);
+                            }
+                            else if (currentSetting==SETTING_COLOR) {
+                                selectedColor=static_cast<Color>((selectedColor+1)%TOTAL_COLOR);
+                            }
+                            break;
+                        case SDLK_RETURN:
+                            currentStatus=START;
+                            break;
+                        }
                     }
                     else if (currentStatus==START && (e.type==SDL_KEYDOWN || e.type==SDL_MOUSEBUTTONDOWN)) {
                         currentStatus=PLAYING;
                         fadeAlpha=0;
                     }
-                    else if (currentStatus==WIN && e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_r) {
-                        currentStatus=RESTART;
+                    else if (currentStatus==WIN && e.type==SDL_KEYDOWN) {
+                        if (e.key.keysym.sym==SDLK_r) {
+                            currentStatus=RESTART;
+                        }
+                        else if (e.key.keysym.sym==SDLK_ESCAPE) {
+                            quit=true;
+                        }
                     }
                     else if (currentStatus==PLAYING) {
                         cube.handleEvent(e);
                     }
                 }
-
-                // Render game
-                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x69, 0xB4, 0xFF);
-                SDL_RenderClear(gRenderer);
-                renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
-                cube.render();
-
-                // Start
-                if (currentStatus==START) {
-                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
-                    SDL_FRect dimOverlay={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
-
-                    SDL_FRect gameTitleRect={(SCREEN_WIDTH-gameTitleTexture.getWidth())/2,
-                                             (SCREEN_HEIGHT-gameTitleTexture.getHeight()-instructionTexture[0].getHeight())/2,
-                                             gameTitleTexture.getWidth(),
-                                             gameTitleTexture.getHeight()};
-                    gameTitleTexture.render(gameTitleRect);
-
-                    instructionRect[0]={(SCREEN_WIDTH-instructionTexture[0].getWidth())/2,
-                                        gameTitleRect.y+gameTitleRect.h,
-                                        instructionTexture[0].getWidth(),
-                                        instructionTexture[0].getHeight()};
-                    instructionTexture[0].render(instructionRect[0]);
-                }
-
-                // Restart after win
-                else if (currentStatus==RESTART) {
-                    dead=false;
-                    fadeAlpha=0;
-                    cube.reset();
-                    loadLevel("level2.txt", blocks, spikes, jumpOrbs, jumpPads);
-                    currentStatus=PLAYING;
-                    continue;
-                }
-
+                float textPosY=0;
                 // Playing
-                else if (currentStatus==PLAYING) {
+                if (currentStatus==PLAYING) {
                     // Handle player interactions
                     cube.move(blocks, jumpOrbs, deltaTime);
                     cube.interact(blocks, spikes, jumpOrbs, jumpPads, dead);
@@ -531,8 +570,81 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                // Win
-                else if (currentStatus==WIN) {
+                // Restart after win
+                if (currentStatus==RESTART) {
+                    dead=false;
+                    fadeAlpha=0;
+                    cube.reset();
+                    loadLevel("Resources/Levels/Level2.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    currentStatus=PLAYING;
+                    continue;
+                }
+
+                // Render level
+                scrollingOffset+=60*deltaTime;
+                if (scrollingOffset>SCREEN_HEIGHT) {
+                    scrollingOffset=0;
+                }
+
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                SDL_RenderClear(gRenderer);
+
+                SDL_Color currentBGColor=bgColor[selectedColor];
+                backgroundTexture[selectedBG].setColor(currentBGColor);
+                SDL_FRect backgroundRect={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                if (selectedBG==STRIPE) {
+                    for (int i=0; i<2; i++) {
+                        backgroundRect.y=backgroundRect.h*i-scrollingOffset;
+                        backgroundTexture[selectedBG].render(backgroundRect);
+                    }
+                }
+                else if (selectedBG==TETRIS) {
+                    for (int i=0; i<2; i++) {
+                        backgroundRect.y=-backgroundRect.h*i+scrollingOffset;
+                        backgroundTexture[selectedBG].render(backgroundRect);
+                    }
+                }
+                else if (selectedBG==BLANK) {
+                    backgroundTexture[selectedBG].render(backgroundRect);
+                }
+
+                renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
+                cube.render();
+
+                // Start screen + settings
+                if (currentStatus==START || currentStatus==SETTINGS) {
+                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
+                    SDL_FRect dimOverlay={SCREEN_WIDTH/10, SCREEN_HEIGHT/10, SCREEN_WIDTH*8/10, SCREEN_HEIGHT*8/10};
+                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
+
+                    SDL_FRect gameTitleRect={(SCREEN_WIDTH-gameTitleTexture.getWidth())/2,
+                                             (SCREEN_HEIGHT-gameTitleTexture.getHeight()-(currentStatus==SETTINGS ? 3 : 1)*instructionTexture[0].getHeight())/2,
+                                             gameTitleTexture.getWidth(),
+                                             gameTitleTexture.getHeight()};
+                    gameTitleTexture.render(gameTitleRect);
+                    textPosY=gameTitleRect.y+gameTitleRect.h;
+
+                    if (currentStatus==START) {
+                        instructionTexture[0].render((SCREEN_WIDTH-instructionTexture[0].getWidth())/2, textPosY);
+                    }
+
+                    else if (currentStatus==SETTINGS) {
+                        instructionTexture[3].render((SCREEN_WIDTH-instructionTexture[3].getWidth())/2, textPosY);
+                        textPosY+=instructionTexture[3].getHeight();
+                        if (currentSetting==SETTING_BG) {
+                            instructionTexture[1].render((SCREEN_WIDTH-instructionTexture[1].getWidth())/2, textPosY);
+                        }
+                        else if (currentSetting==SETTING_COLOR) {
+                            instructionTexture[2].render((SCREEN_WIDTH-instructionTexture[2].getWidth())/2, textPosY);
+                        }
+                        textPosY+=instructionTexture[1].getHeight();
+                        instructionTexture[4].render((SCREEN_WIDTH-instructionTexture[4].getWidth())/2, textPosY);
+                    }
+                }
+
+                // Win screen
+                if (currentStatus==WIN) {
                     if (fadeAlpha<180) {
                         fadeAlpha+=400*deltaTime;
                         if (fadeAlpha>180) {
@@ -546,18 +658,14 @@ int main(int argc, char *argv[]) {
                     SDL_RenderFillRectF(gRenderer, &dimOverlay);
 
                     SDL_FRect winMsgRect={(SCREEN_WIDTH-winMsgTexture.getWidth())/2,
-                                          (SCREEN_HEIGHT-winMsgTexture.getHeight()-instructionTexture[1].getHeight())/2,
+                                          (SCREEN_HEIGHT-winMsgTexture.getHeight()-instructionTexture[100].getHeight())/2,
                                           winMsgTexture.getWidth(),
                                           winMsgTexture.getHeight()};
                     winMsgTexture.setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
                     winMsgTexture.render(winMsgRect);
 
-                    instructionRect[1]={(SCREEN_WIDTH-instructionTexture[1].getWidth())/2,
-                                        winMsgRect.y+winMsgRect.h,
-                                        instructionTexture[1].getWidth(),
-                                        instructionTexture[1].getHeight()};
-                    instructionTexture[1].setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
-                    instructionTexture[1].render(instructionRect[1]);
+                    instructionTexture[100].setAlpha(static_cast<Uint8>(fadeAlpha)*255/180);
+                    instructionTexture[100].render((SCREEN_WIDTH-instructionTexture[100].getWidth())/2, winMsgRect.y+winMsgRect.h);
                 }
 
                 SDL_RenderPresent(gRenderer);

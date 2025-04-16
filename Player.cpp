@@ -175,6 +175,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, do
     // Update position
     mPosX=nextPosX;
 
+    // Vertical movement
     // Gravity (scaled by deltaTime)
     if (!reverseGravity) {
         mVelY+=GRAVITY*deltaTime;
