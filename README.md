@@ -3,6 +3,12 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+### v0.06
+New feature: Background customization
+- Choose between 3 background patterns and 4 colors
+
+Showcase: https://github.com/user-attachments/assets/4d9882d9-a1c3-489c-839b-dd86e0141f66
+
 ### v0.05
 - Added start and end screen
 
