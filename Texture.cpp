@@ -76,8 +76,8 @@ void LTexture::free() {
 }
 
 // Set color
-void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue) {
-    SDL_SetTextureColorMod(mTexture, red, green, blue);
+void LTexture::setColor(SDL_Color color) {
+    SDL_SetTextureColorMod(mTexture, color.r, color.g, color.b);
 }
 
 // Set blend mode
@@ -92,6 +92,10 @@ void LTexture::setAlpha(Uint8 alpha) {
 
 // Render texture
 void LTexture::render(SDL_FRect renderQuad, SDL_Rect *clip, double angle, SDL_FPoint *center, SDL_RendererFlip flip) {
+    SDL_RenderCopyExF(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+}
+void LTexture::render(float x, float y, SDL_Rect *clip, double angle, SDL_FPoint *center, SDL_RendererFlip flip) {
+    SDL_FRect renderQuad={x, y, mWidth, mHeight};
     SDL_RenderCopyExF(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
