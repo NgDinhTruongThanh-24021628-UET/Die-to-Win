@@ -1,10 +1,19 @@
 #include <iostream>
-#include <SDL.h>
+#include <string>
 #include <vector>
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
 #include "Texture.h"
 #include "LevelObjs.h"
+#include "Player.h"
+#include "Enums.h"
+using namespace std;
 
 extern SDL_Renderer *gRenderer;
+extern LTexture instructionTexture[1000];
+extern TTF_Font *gSmallFont;
+extern SDL_Color textColor;
 
 // Block functions start
 
@@ -84,15 +93,83 @@ bool Block::checkYCollision(double playerX, double &playerY, double &nextPlayerY
 const SDL_FRect &Block::getHitbox() const {
     return hitbox;
 }
-const std::string &Block::getType() const {
+const string &Block::getType() const {
     return blockType;
+}
+void Block::changePosition(float x, float y) {
+    hitbox.x=x;
+    hitbox.y=y;
+}
+
+bool Block::isInteractable() const {
+    string type[8]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C"};
+    for (int i=0; i<8; i++) {
+        if (blockType==type[i]) return true;
+    }
+    return false;
+}
+void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus, vector<Block> &blocks) {
+    if (!isInteractable()) return;
+    if (blockType=="1IP") {
+        totalMoney+=gainPerHit;
+    }
+    else if (blockType=="1I3") {
+        if (counter>=25) counter=25;
+        else {
+            if (totalMoney>=(unsigned long long)value) {
+                if (counter==0) gainPerHit*=5;
+                else gainPerHit+=increment;
+                totalMoney-=value;
+                increment*=2;
+                value*=2;
+                counter++;
+            }
+        }
+    }
+    else if (blockType=="1I4") {
+        if (counter>=25) counter=25;
+        else {
+            if (totalMoney>=(unsigned long long)value) {
+                passiveIncome+=increment;
+                totalMoney-=value;
+                increment*=2;
+                value*=2;
+                counter++;
+            }
+        }
+    }
+    else if (blockType=="1I2") {
+        if (counter>=5) counter=5;
+        else {
+            if (counter==0) value=100;
+            if (totalMoney>=(unsigned long long)value) {
+                for (auto &block : blocks) {
+                    if (block.getType()=="1IP") {
+                        block.changePosition(block.getHitbox().x, block.getHitbox().y+TILE_SIZE/3);
+                    }
+                }
+                totalMoney-=value;
+                value*=20;
+                counter++;
+            }
+        }
+    }
+    else if (blockType=="1S") {
+        currentStatus=SETTINGS;
+    }
+    else if (blockType=="1P") {
+        currentStatus=START;
+    }
+    else if (blockType=="1C") {
+        currentStatus=CREDITS;
+    }
 }
 
 // Block functions end
 
 // Spike functions start
 
-Spike::Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type) {
+Spike::Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const string &type) {
     hitbox={x, y, w, h};
     angle=a;
     mirror=m;
@@ -109,7 +186,7 @@ bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int
 const SDL_FRect &Spike::getHitbox() const {
     return hitbox;
 }
-const std::string &Spike::getType() const {
+const string &Spike::getType() const {
     return spikeType;
 }
 

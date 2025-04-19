@@ -3,6 +3,7 @@
 #include <iostream>
 #include <SDL.h>
 #include <vector>
+#include "Enums.h"
 
 extern const int TILE_SIZE;
 
@@ -19,12 +20,20 @@ public:
 
     const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
+    void changePosition(float x, float y);
+
+    bool isInteractable() const;
+    void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus, std::vector<Block> &blocks);
 
     double angle;
+
+    int counter=0;
+    int value=5;
 
 private:
     SDL_FRect hitbox;
     std::string blockType;
+    int increment=5;
 };
 
 class Spike {

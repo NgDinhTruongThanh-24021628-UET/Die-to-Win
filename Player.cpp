@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Texture.h"
 #include "LevelObjs.h"
+#include "Enums.h"
 
 extern SDL_Renderer *gRenderer;
 extern LTexture cubeTexture;
@@ -22,6 +23,10 @@ Player::Player() {
     hitCeiling=false;
     reverseGravity=false;
     coyoteTimer=0.0;
+    totalMoney=0;
+    gainPerHit=1;
+    passiveIncome=0;
+    income=0;
 }
 
 void Player::reset() {
@@ -37,6 +42,19 @@ void Player::reset() {
     hitCeiling=false;
     reverseGravity=false;
     coyoteTimer=0.0;
+    totalMoney=0;
+    gainPerHit=1;
+    passiveIncome=0;
+    income=0;
+}
+
+void Player::resetBool() {
+    isJumpHeld=false;
+    canJump=true;
+    moveLeft=false;
+    moveRight=false;
+    onPlatform=false;
+    hitCeiling=false;
 }
 
 // Handle mouse + keyboard events
@@ -140,7 +158,7 @@ void Player::forcePushIntoGap(std::vector<Block> &blocks) {
 }
 
 // Move player, platform physics included, deltaTime for consistent physics
-void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, double deltaTime) {
+void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, double deltaTime) {
 
     // Horizontal movement
     if (moveLeft && !moveRight) {
@@ -162,16 +180,6 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, do
         }
     }
 
-    /* Prevent out of bounds
-    if (nextPosX<=0) {
-        nextPosX=0;
-        mVelX=0.0;
-    }
-    if (nextPosX+PLAYER_WIDTH>=SCREEN_WIDTH) {
-        nextPosX=SCREEN_WIDTH-PLAYER_WIDTH;
-        mVelX=0.0;
-    } */
-
     // Update position
     mPosX=nextPosX;
 
@@ -191,24 +199,14 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, do
     hitCeiling=false;
 
     // Block collision detection (Y axis)
-    for (const auto &block : blocks) {
+    for (auto &block : blocks) {
         if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT,
                                   onPlatform, hitCeiling, reverseGravity)) {
             mVelY=0.0;
+            if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus, blocks);
         }
     }
     forcePushIntoGap(blocks);
-
-    /* Prevent out of bounds
-    if (nextPosY+PLAYER_HEIGHT>=SCREEN_HEIGHT) {
-        nextPosY=SCREEN_HEIGHT-PLAYER_HEIGHT;
-        mVelY=0.0;
-        onPlatform=true;
-    }
-    if (nextPosY<=0) {
-        nextPosY=0;
-        mVelY=0.0;
-    } */
 
     // Calculate coyote time
     if (onPlatform) {
@@ -258,7 +256,7 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
         // Set up position to teleport to
         float closestPosY=0;
 
-        for (const auto &block : blocks) {
+        for (auto &block : blocks) {
             SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
@@ -290,7 +288,7 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
         // Set up position to teleport to
         float closestPosY=SCREEN_HEIGHT;
 
-        for (const auto &block : blocks) {
+        for (auto &block : blocks) {
             SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
@@ -320,7 +318,13 @@ void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> 
 
 // Jump orb and jump pad interactions
 void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
-                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, bool &dead) {
+                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &dead) {
+
+    income+=passiveIncome*deltaTime;
+    if (income>=passiveIncome) {
+        totalMoney+=passiveIncome;
+        income=0;
+    }
 
     // Orb interactions
     for (auto &orb : jumpOrbs) {
@@ -431,4 +435,15 @@ SDL_FRect Player::getSPadHitbox() {
 // Get gravity status
 bool Player::getGravity() {
     return reverseGravity;
+}
+
+// Just for idle tycoon
+int Player::getGainPerHit() {
+    return gainPerHit;
+}
+int Player::getPassiveIncome() {
+    return passiveIncome;
+}
+unsigned long long Player::getTotalMoney() {
+    return totalMoney;
 }
