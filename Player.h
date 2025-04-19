@@ -3,6 +3,7 @@
 #include <vector>
 #include <SDL.h>
 #include "LevelObjs.h"
+#include "Enums.h"
 
 extern const int SCREEN_WIDTH;
 extern const int SCREEN_HEIGHT;
@@ -33,6 +34,7 @@ public:
 
     // Reset player status
     void reset();
+    void resetBool();
 
     // Handle mouse + keyboard events
     void handleEvent(SDL_Event &e);
@@ -41,14 +43,14 @@ public:
     void forcePushIntoGap(std::vector<Block> &blocks);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, double deltaTime);
+    void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, double deltaTime);
 
     // Helper function for spider pad interactions
     void findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> &spikes);
 
     // Jump orb and jump pad interactions
     void interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
-                  std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, bool &quit);
+                  std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &quit);
 
     // Render player to window
     void render();
@@ -61,6 +63,13 @@ public:
 
     // Get gravity status
     bool getGravity();
+
+    // Just for idle tycoon
+    unsigned long long getTotalMoney();
+    int getGainPerHit();
+    int getPassiveIncome();
+
+    double income;
 
 private:
     // Player X/Y positions
@@ -84,4 +93,9 @@ private:
     // Coyote time, allowing player to jump just after leaving platform
     double coyoteTimer;
     static constexpr double COYOTE_TIME=0.03;
+
+    // Just for idle tycoon
+    unsigned long long totalMoney;
+    int gainPerHit;
+    int passiveIncome;
 };

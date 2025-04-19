@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1744770899 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745065239 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -12,19 +12,22 @@
 	"Player.h"
 	"Texture.h"
 	"LevelObjs.h"
+	"Enums.h"
 
-1744388442 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745064288 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
+	"Enums.h"
 
-1744475725 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745064445 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<cmath>
 	"Player.h"
 	"Texture.h"
 	"LevelObjs.h"
+	"Enums.h"
 
 1742295619 source:c:\users\truong thanh\documents\sdl projects\die to win\onoff.cpp
 	<iostream>
@@ -42,7 +45,7 @@
 
 1742297023 c:\users\truong thanh\documents\sdl projects\die to win\globals.h
 
-1744770411 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
+1744977552 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
 	<iostream>
 	<string>
 	<SDL.h>
@@ -50,7 +53,7 @@
 	<SDL_ttf.h>
 	"Texture.h"
 
-1744770411 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
+1744949169 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
 	<string>
 	<SDL.h>
 	<SDL_ttf.h>
@@ -65,15 +68,25 @@
 	<iostream>
 	<SDL.h>
 
-1744769416 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745031963 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
+	"Enums.h"
 
-1744769416 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745065100 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
-	<SDL.h>
+	<string>
 	<vector>
+	<SDL.h>
+	<SDL_ttf.h>
+	<SDL_image.h>
 	"Texture.h"
 	"LevelObjs.h"
+	"Player.h"
+	"Enums.h"
+
+1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
+
+1745065100 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
 
