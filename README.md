@@ -4,7 +4,7 @@ Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
 ### v0.07
-- Converted start screen into menu screen
+- Replaced start screen with menu screen
 
 Showcase: https://github.com/user-attachments/assets/ea9d3dbd-31a4-433e-9bf4-8a989f33ccb8
 
