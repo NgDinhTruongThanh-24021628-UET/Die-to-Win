@@ -9,7 +9,7 @@ extern const int TILE_SIZE;
 
 class Block {
 public:
-    Block(float x, float y, float w, float h, double a, const std::string &type);
+    Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type);
 
     bool checkXCollision(double &playerX, double playerY, double &nextPlayerX,
                          double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
@@ -26,6 +26,7 @@ public:
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus, std::vector<Block> &blocks);
 
     double angle;
+    SDL_RendererFlip mirror;
 
     int counter=0;
     int value=5;
@@ -61,7 +62,7 @@ public:
 
     const SDL_FRect &getHitbox() const;
 
-    const int getType() const;
+    const char getType() const;
 
     mutable double rotationAngle=0.0;
     void updateRotation(double deltaTime) const;
@@ -73,21 +74,22 @@ private:
 
 class JumpPad {
 public:
-    JumpPad(float x, float y, float w, float h, char type);
+    JumpPad(float x, float y, float w, float h, double a, const std::string &type);
 
     bool checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
     const SDL_FRect &getHitbox() const;
-
-    const int getType() const;
+    const std::string &getType() const;
 
     // Only trigger pad once
     void markUsed();
     void resetUsed();
     bool canTrigger();
 
+    double angle;
+
 private:
     SDL_FRect hitbox;
-    char padType;
+    std::string padType;
     bool padUsed=false;
 };
