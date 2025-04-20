@@ -17,10 +17,11 @@ extern SDL_Color textColor;
 
 // Block functions start
 
-Block::Block(float x, float y, float w, float h, double a, const std::string &type) {
+Block::Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type) {
     hitbox={x, y, w, h};
     angle=a;
     blockType=type;
+    mirror=m;
 }
 
 bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX,
@@ -210,7 +211,7 @@ const SDL_FRect &JumpOrb::getHitbox() const {
     return hitbox;
 }
 
-const int JumpOrb::getType() const {
+const char JumpOrb::getType() const {
     return orbType;
 }
 
@@ -223,8 +224,9 @@ void JumpOrb::updateRotation(double deltaTime) const {
 
 // Jump pad functions start
 
-JumpPad::JumpPad(float x, float y, float w, float h, char type) {
+JumpPad::JumpPad(float x, float y, float w, float h, double a, const string &type) {
     hitbox={x, y, w, h};
+    angle=a;
     padType=type;
 }
 
@@ -239,7 +241,7 @@ const SDL_FRect &JumpPad::getHitbox() const {
     return hitbox;
 }
 
-const int JumpPad::getType() const {
+const std::string &JumpPad::getType() const {
     return padType;
 }
 

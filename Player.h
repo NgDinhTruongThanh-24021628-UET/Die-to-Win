@@ -18,7 +18,7 @@ public:
     const int PLAYER_HEIGHT=TILE_SIZE;
 
     // Horizontal velocity
-    static constexpr double X_VELOCITY=490.0;
+    static constexpr double X_VELOCITY=600.0;
 
     // Initial velocity when jump
     static constexpr double JUMP_VELOCITY=-1390.0;
@@ -46,7 +46,7 @@ public:
     void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, double deltaTime);
 
     // Helper function for spider pad interactions
-    void findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> &spikes);
+    void findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::vector<Spike> &spikes);
 
     // Jump orb and jump pad interactions
     void interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,

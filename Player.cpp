@@ -245,7 +245,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, Ga
 }
 
 // Helper function for spider pad interactions
-void Player::findClosestRectSPad(std::vector<Block> &blocks, std::vector<Spike> &spikes) {
+void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::vector<Spike> &spikes) {
 
     // Player hitboxes
     SDL_FRect normalHitbox=getHitbox();
@@ -368,15 +368,15 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
     for (auto &pad : jumpPads) {
         if (pad.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             if (pad.canTrigger()) {
-                char padType=pad.getType();
+                std::string padType=pad.getType();
                 if (!reverseGravity) {
-                    switch (padType) {
+                    switch (padType[0]) {
                     case 'J': // Yellow pad
                         mVelY=JUMP_VELOCITY*1.37;
                         break;
                     case 'S': // Spider pad
                         reverseGravity=true;
-                        findClosestRectSPad(blocks, spikes);
+                        findClosestRectSPad(pad, blocks, spikes);
                         mVelY=0.0;
                         break;
                     case 'P': // Pink pad
@@ -385,13 +385,13 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
                     }
                 }
                 else {
-                    switch (padType) {
+                    switch (padType[0]) {
                     case 'J':
                         mVelY=-JUMP_VELOCITY*1.37;
                         break;
                     case 'S':
                         reverseGravity=false;
-                        findClosestRectSPad(blocks, spikes);
+                        findClosestRectSPad(pad, blocks, spikes);
                         mVelY=0.0;
                         break;
                     case 'P':

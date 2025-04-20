@@ -37,14 +37,8 @@ LTexture gameTitleTexture;
 LTexture instructionTexture[1000];
 
 LTexture cubeTexture;
-
-LTexture yellowOrbTexture;
-LTexture blueOrbTexture;
-LTexture greenOrbTexture;
-
-LTexture yellowPadTexture;
-LTexture spiderPadTexture;
-LTexture pinkPadTexture;
+LTexture blockSheetTexture;
+LTexture orbPadSheetTexture;
 
 Color selectedColor=PINK;
 const int BG_TOTAL_COLOR=4;
@@ -58,11 +52,14 @@ SDL_Color bgColor[BG_TOTAL_COLOR]={
 Background selectedBG=BLANK;
 LTexture backgroundTexture[TOTAL_BG];
 
-const int NUMBER_OF_BLOCKS=25;
-const int NUMBER_OF_SPIKES=6;
+const int NUMBER_OF_BLOCKS=28;
+const int NUMBER_OF_SPIKES=3;
+const int NUMBER_OF_ORBS=3;
+const int NUMBER_OF_PADS=3;
 SDL_Rect blockClips[NUMBER_OF_BLOCKS];
 SDL_Rect spikeClips[NUMBER_OF_SPIKES];
-LTexture blockSheetTexture;
+SDL_Rect orbClips[NUMBER_OF_ORBS];
+SDL_Rect padClips[NUMBER_OF_PADS];
 
 // Initialize
 bool init() {
@@ -232,17 +229,17 @@ bool loadMedia() {
         // Line block, facing up by default
         blockClips[24]={480, 320, 160, 160};
 
-        // Platform tip[0] with spike on top[1], platform tip facing left, spike facing up by default
-        spikeClips[0]={320, 160, 160, 160};
-        spikeClips[1]={320, 0, 160, 160};
+        // Platform tip with spike on top, platform tip facing left, spike facing up by default
+        blockClips[25]={320, 160, 160, 160};
+        spikeClips[0]={320, 0, 160, 160};
 
-        // Platform[2] with spike on top[3], spike facing up by default
-        spikeClips[2]={480, 160, 160, 160};
-        spikeClips[3]={480, 0, 160, 160};
+        // Platform with spike on top, spike facing up by default
+        blockClips[26]={480, 160, 160, 160};
+        spikeClips[1]={480, 0, 160, 160};
 
-        // Platform[4] with big spike on top[5], spike facing up by default
-        spikeClips[4]={640, 160, 160, 160};
-        spikeClips[5]={640, 0, 160, 160};
+        // Platform with big spike on top, spike facing up by default
+        blockClips[27]={640, 160, 160, 160};
+        spikeClips[2]={640, 0, 160, 160};
     }
 
     if (!cubeTexture.loadFromFile("Resources/Player.png")) {
@@ -250,20 +247,18 @@ bool loadMedia() {
         success=false;
     }
 
-    if (!yellowOrbTexture.loadFromFile("Resources/Yellow Orb.png") ||
-        !blueOrbTexture.loadFromFile("Resources/Blue Orb.png") ||
-        !greenOrbTexture.loadFromFile("Resources/Green Orb.png")) {
-
-        cout << "Failed to load orb texture." << endl;
+    if (!orbPadSheetTexture.loadFromFile("Resources/Orb and Pad.png")) {
+        cout << "Failed to load orb and pad texture." << endl;
         success=false;
     }
+    else {
+        orbClips[0]={0, 0, 160, 160};       // Yellow orb
+        orbClips[1]={160, 0, 160, 160};     // Blue orb
+        orbClips[2]={320, 0, 160, 160};     // Green orb
 
-    if (!yellowPadTexture.loadFromFile("Resources/Yellow Pad.png") ||
-        !spiderPadTexture.loadFromFile("Resources/Spider Pad.png") ||
-        !pinkPadTexture.loadFromFile("Resources/Pink Pad.png")) {
-
-        cout << "Failed to load pad texture." << endl;
-        success=false;
+        padClips[0]={0, 160, 160, 160};     // Yellow pad
+        padClips[1]={160, 160, 160, 160};   // Spider pad
+        padClips[2]={320, 160, 160, 160};   // Pink pad
     }
 
     if (!backgroundTexture[STRIPE].loadFromFile("Resources/Stripe BG.png") ||
@@ -281,17 +276,11 @@ bool loadMedia() {
 void close() {
     // Deal with textures
     blockSheetTexture.free();
+    orbPadSheetTexture.free();
     cubeTexture.free();
-
-    yellowOrbTexture.free();
-    blueOrbTexture.free();
-    greenOrbTexture.free();
-
-    yellowPadTexture.free();
-    spiderPadTexture.free();
-    pinkPadTexture.free();
-
-    backgroundTexture[0].free();
+    for (int i=0; i<TOTAL_BG; i++) {
+        backgroundTexture[i].free();
+    }
 
     for (int i=0; i<1000; i++) {
         instructionTexture[i].free();
@@ -339,64 +328,90 @@ vector<JumpPad> jumpPads;
 struct BlockInfo {
     int clipIndex;
     double rotation;
+    SDL_RendererFlip mirrored;
 };
 unordered_map<string, BlockInfo> blockLookup={
-    {"1C0", {0, 0}},     // Top left level corner
-    {"1C1", {0, 90}},    // Top right level corner
-    {"1C2", {0, 180}},   // Bottom right level corner
-    {"1C3", {0, 270}},   // Bottom left level corner
+    {"1C0", {0, 0, SDL_FLIP_NONE}},     // Top left level corner
+    {"1C1", {0, 90, SDL_FLIP_NONE}},    // Top right level corner
+    {"1C2", {0, 180, SDL_FLIP_NONE}},   // Bottom right level corner
+    {"1C3", {0, 270, SDL_FLIP_NONE}},   // Bottom left level corner
 
-    {"1WH", {1, 0}},     // Horizontal wall
-    {"1WV", {1, 90}},    // Vertical wall
+    {"1WH", {1, 0, SDL_FLIP_NONE}},     // Horizontal wall
+    {"1WV", {1, 90, SDL_FLIP_NONE}},    // Vertical wall
 
-    {"1TL", {2, 0}},     // T-block left
-    {"1TU", {2, 90}},    // T-block up
-    {"1TR", {2, 180}},   // T-block right
-    {"1TD", {2, 270}},   // T-block down
+    {"1TL", {2, 0, SDL_FLIP_NONE}},     // T-block left
+    {"1TU", {2, 90, SDL_FLIP_NONE}},    // T-block up
+    {"1TR", {2, 180, SDL_FLIP_NONE}},   // T-block right
+    {"1TD", {2, 270, SDL_FLIP_NONE}},   // T-block down
 
-    {"1PU", {3, 0}},     // Platform tip up
-    {"1PR", {3, 90}},    // Platform tip right
-    {"1PD", {3, 180}},   // Platform tip down
-    {"1PL", {3, 270}},   // Platform tip left
+    {"1PU", {3, 0, SDL_FLIP_NONE}},     // Platform tip up
+    {"1PR", {3, 90, SDL_FLIP_NONE}},    // Platform tip right
+    {"1PD", {3, 180, SDL_FLIP_NONE}},   // Platform tip down
+    {"1PL", {3, 270, SDL_FLIP_NONE}},   // Platform tip left
 
-    {"1E", {4, 0}},      // No border block
-    {"1B", {5, 0}},      // All border block
-    {"1BI", {5, 0}},     // All border block (interactable)
-    {"1BG", {5, 0}},     // All border block (green)
-    {"1BO", {5, 0}},     // All border block (orange)
+    {"1E", {4, 0, SDL_FLIP_NONE}},      // No border block
+    {"1B", {5, 0, SDL_FLIP_NONE}},      // All border block
+    {"1BI", {5, 0, SDL_FLIP_NONE}},     // All border block (interactable)
+    {"1BG", {5, 0, SDL_FLIP_NONE}},     // All border block (green)
+    {"1BO", {5, 0, SDL_FLIP_NONE}},     // All border block (orange)
 
-    {"1I1", {6, 0}},     // Idle tycoon block 1 - misc upgrade
-    {"1I2", {7, 0}},     // Idle tycoon block 2 - lower the point block
-    {"1I3", {8, 0}},     // Idle tycoon block 3 - point upgrade
-    {"1I4", {9, 0}},     // Idle tycoon block 4 - passive income upgrade
-    {"1IP", {10, 0}},    // Idle tycoon - point block
+    {"1I1", {6, 0, SDL_FLIP_NONE}},     // Idle tycoon block 1 - misc upgrade
+    {"1I2", {7, 0, SDL_FLIP_NONE}},     // Idle tycoon block 2 - lower the point block
+    {"1I3", {8, 0, SDL_FLIP_NONE}},     // Idle tycoon block 3 - point upgrade
+    {"1I4", {9, 0, SDL_FLIP_NONE}},     // Idle tycoon block 4 - passive income upgrade
+    {"1IP", {10, 0, SDL_FLIP_NONE}},    // Idle tycoon - point block
 
-    {"1S", {11, 0}},     // Menu block 1 - settings
-    {"1P", {12, 0}},     // Menu block 2 - start
-    {"1C", {13, 0}},     // Menu block 3 - credits
+    {"1S", {11, 0, SDL_FLIP_NONE}},     // Menu block 1 - settings
+    {"1P", {12, 0, SDL_FLIP_NONE}},     // Menu block 2 - start
+    {"1C", {13, 0, SDL_FLIP_NONE}},     // Menu block 3 - credits
 
-    {"1IN", {14, 0}},    // Password puzzle - check solution
-    {"1BB", {15, 0}},    // Pool puzzle - add water
-    {"1SA", {16, 0}},    // Time puzzle - stop time
-    {"1MV", {17, 0}},    // Movable block
+    {"1IN", {14, 0, SDL_FLIP_NONE}},    // Password puzzle - check solution
+    {"1BB", {15, 0, SDL_FLIP_NONE}},    // Pool puzzle - add water
+    {"1SA", {16, 0, SDL_FLIP_NONE}},    // Time puzzle - stop time
+    {"1MV", {17, 0, SDL_FLIP_NONE}},    // Movable block
 
-    {"1XM", {18, 0}},    // Tic-tac-toe puzzle - move X to next position
-    {"1XI", {19, 0}},    // Tic-tac-toe puzzle - X block (interactable)
-    {"1X", {19, 0}},     // Tic-tac-toe puzzle - X block
-    {"1O", {20, 0}},     // Tic-tac-toe puzzle - O block
-    {"1R", {21, 0}},     // Reset puzzle
+    {"1XM", {18, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - move X to next position
+    {"1XI", {19, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - X block (interactable)
+    {"1X", {19, 0, SDL_FLIP_NONE}},     // Tic-tac-toe puzzle - X block
+    {"1O", {20, 0, SDL_FLIP_NONE}},     // Tic-tac-toe puzzle - O block
+    {"1R", {21, 0, SDL_FLIP_NONE}},     // Reset puzzle
 
-    {"1ZA", {22, 0}},    // Electricity puzzle - deplete
+    {"1ZA", {22, 0, SDL_FLIP_NONE}},    // Electricity puzzle - deplete
 
-    {"1K0", {23, 0}},    // Top left corner block
-    {"1K1", {23, 90}},   // Top right corner block
-    {"1K2", {23, 180}},  // Bottom right corner block
-    {"1K3", {23, 270}},  // Bottom left corner block
+    {"1K0", {23, 0, SDL_FLIP_NONE}},    // Top left corner block
+    {"1K1", {23, 90, SDL_FLIP_NONE}},   // Top right corner block
+    {"1K2", {23, 180, SDL_FLIP_NONE}},  // Bottom right corner block
+    {"1K3", {23, 270, SDL_FLIP_NONE}},  // Bottom left corner block
 
-    {"1LU", {24, 0}},    // Line block up
-    {"1LR", {24, 90}},   // Line block right
-    {"1LD", {24, 180}},  // Line block down
-    {"1LL", {24, 270}}   // Line block left
+    {"1LU", {24, 0, SDL_FLIP_NONE}},    // Line block up
+    {"1LR", {24, 90, SDL_FLIP_NONE}},   // Line block right
+    {"1LD", {24, 180, SDL_FLIP_NONE}},  // Line block down
+    {"1LL", {24, 270, SDL_FLIP_NONE}},  // Line block left
+
+/***********************************************************************************************/
+    // Platform tip[25] with spike
+    {"3AU", {25, 0, SDL_FLIP_NONE}},    // Facing up
+    {"3AR", {25, 90, SDL_FLIP_NONE}},   // Facing right
+    {"3AD", {25, 180, SDL_FLIP_NONE}},  // Facing down
+    {"3AL", {25, 270, SDL_FLIP_NONE}},  // Facing left
+
+    // Platform tip[25] with spike, mirrored
+    {"3AUM", {25, 0, SDL_FLIP_HORIZONTAL}},     // Facing up
+    {"3ARM", {25, 90, SDL_FLIP_HORIZONTAL}},    // Facing right
+    {"3ADM", {25, 180, SDL_FLIP_HORIZONTAL}},   // Facing down
+    {"3ALM", {25, 270, SDL_FLIP_HORIZONTAL}},   // Facing left
+
+    // Normal platform[26] with spike
+    {"3CU", {26, 0, SDL_FLIP_NONE}},    // Facing up
+    {"3CR", {26, 90, SDL_FLIP_NONE}},   // Facing right
+    {"3CD", {26, 180, SDL_FLIP_NONE}},  // Facing down
+    {"3CL", {26, 270, SDL_FLIP_NONE}},  // Facing left
+
+    // Normal platform[27] with big spike
+    {"3EU", {27, 0, SDL_FLIP_NONE}},    // Facing up
+    {"3ER", {27, 90, SDL_FLIP_NONE}},   // Facing right
+    {"3ED", {27, 180, SDL_FLIP_NONE}},  // Facing down
+    {"3EL", {27, 270, SDL_FLIP_NONE}}   // Facing left
 };
 
 // Identify spike type
@@ -405,62 +420,48 @@ struct SpikeInfo {
     double rotation;
     SDL_RendererFlip mirrored;
 };
-unordered_map<string, SpikeInfo> spikeLookup={
-    // Platform tip with spike, facing up, mirrored or not
-    {"2AU", {1, 0, SDL_FLIP_NONE}},
-    {"2BU", {0, 0, SDL_FLIP_NONE}},
-    {"2AUM", {1, 0, SDL_FLIP_HORIZONTAL}},
-    {"2BUM", {0, 0, SDL_FLIP_HORIZONTAL}},
+unordered_map<string, SpikeInfo> spikeLookup={ // Note: Spike platform migrated to blocks (number 3 in front)
+    // Platform tip with spike[0]
+    {"2AU", {0, 0, SDL_FLIP_NONE}},     // Facing up
+    {"2AR", {0, 90, SDL_FLIP_NONE}},    // Facing right
+    {"2AD", {0, 180, SDL_FLIP_NONE}},   // Facing down
+    {"2AL", {0, 270, SDL_FLIP_NONE}},   // Facing left
 
-    // Platform tip with spike, facing right, mirrored or not
-    {"2AR", {1, 90, SDL_FLIP_NONE}},
-    {"2BR", {0, 90, SDL_FLIP_NONE}},
-    {"2ARM", {1, 90, SDL_FLIP_HORIZONTAL}},
-    {"2BRM", {0, 90, SDL_FLIP_HORIZONTAL}},
+    // Platform tip with spike[0], mirrored
+    {"2AUM", {0, 0, SDL_FLIP_HORIZONTAL}},      // Facing up
+    {"2ARM", {0, 90, SDL_FLIP_HORIZONTAL}},     // Facing right
+    {"2ADM", {0, 180, SDL_FLIP_HORIZONTAL}},    // Facing down
+    {"2ALM", {0, 270, SDL_FLIP_HORIZONTAL}},    // Facing left
 
-    // Platform tip with spike, facing down, mirrored or not
-    {"2AD", {1, 180, SDL_FLIP_NONE}},
-    {"2BD", {0, 180, SDL_FLIP_NONE}},
-    {"2ADM", {1, 180, SDL_FLIP_HORIZONTAL}},
-    {"2BDM", {0, 180, SDL_FLIP_HORIZONTAL}},
+    // Normal platform with spike[1]
+    {"2CU", {1, 0, SDL_FLIP_NONE}},     // Facing up
+    {"2CR", {1, 90, SDL_FLIP_NONE}},    // Facing right
+    {"2CD", {1, 180, SDL_FLIP_NONE}},   // Facing down
+    {"2CL", {1, 270, SDL_FLIP_NONE}},   // Facing left
 
-    // Platform tip with spike, facing left, mirrored or not
-    {"2AL", {1, 270, SDL_FLIP_NONE}},
-    {"2BL", {0, 270, SDL_FLIP_NONE}},
-    {"2ALM", {1, 270, SDL_FLIP_HORIZONTAL}},
-    {"2BLM", {0, 270, SDL_FLIP_HORIZONTAL}},
+    // Normal platform with big spike[2]
+    {"2EU", {2, 0, SDL_FLIP_NONE}},     // Facing up
+    {"2ER", {2, 90, SDL_FLIP_NONE}},    // Facing right
+    {"2ED", {2, 180, SDL_FLIP_NONE}},   // Facing down
+    {"2EL", {2, 270, SDL_FLIP_NONE}},    // Facing left
+};
 
-    // Normal platform with spike, facing up
-    {"2CU", {3, 0, SDL_FLIP_NONE}},
-    {"2DU", {2, 0, SDL_FLIP_NONE}},
+// Identify jump pad type
+struct JumpPadInfo {
+    int clipIndex;
+    double rotation;
+};
+unordered_map<string, JumpPadInfo> jumpPadLookup={
+    {"JU", {0, 0}},      // Yellow pad up
+    {"JD", {0, 180}},    // Yellow pad down
 
-    // Normal platform with spike, facing right
-    {"2CR", {3, 90, SDL_FLIP_NONE}},
-    {"2DR", {2, 90, SDL_FLIP_NONE}},
+    {"SU", {1, 0}},      // Spider pad up
+    {"SR", {1, 90}},     // Spider pad right
+    {"SD", {1, 180}},    // Spider pad down
+    {"SL", {1, 270}},    // Spider pad left
 
-    // Normal platform with spike, facing down
-    {"2CD", {3, 180, SDL_FLIP_NONE}},
-    {"2DD", {2, 180, SDL_FLIP_NONE}},
-
-    // Normal platform with spike, facing left
-    {"2CL", {3, 270, SDL_FLIP_NONE}},
-    {"2DL", {2, 270, SDL_FLIP_NONE}},
-
-    // Normal platform with big spike, facing up
-    {"2EU", {5, 0, SDL_FLIP_NONE}},
-    {"2FU", {4, 0, SDL_FLIP_NONE}},
-
-    // Normal platform with big spike, facing right
-    {"2ER", {5, 90, SDL_FLIP_NONE}},
-    {"2FR", {4, 90, SDL_FLIP_NONE}},
-
-    // Normal platform with big spike, facing down
-    {"2ED", {5, 180, SDL_FLIP_NONE}},
-    {"2FD", {4, 180, SDL_FLIP_NONE}},
-
-    // Normal platform with big spike, facing left
-    {"2EL", {5, 270, SDL_FLIP_NONE}},
-    {"2FL", {4, 270, SDL_FLIP_NONE}},
+    {"PU", {2, 0}},      // Pink pad up
+    {"PD", {2, 180}},    // Pink pad down
 };
 
 // Load level from a file
@@ -478,39 +479,84 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
     int row=0;
     while (row<LEVEL_HEIGHT) {
         for (int col=0; col<LEVEL_WIDTH; col++) {
-            int baseX=col*TILE_SIZE-TILE_SIZE*11/18;
-            int baseY=row*TILE_SIZE-TILE_SIZE*9/18;
+            float baseX=col*TILE_SIZE-TILE_SIZE*11/18;
+            float baseY=row*TILE_SIZE-TILE_SIZE*9/18;
 
             file >> tile;
 
+            // Store blocks
             if (blockLookup.find(tile)!=blockLookup.end()) {
                 BlockInfo info=blockLookup[tile];
-                blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE, info.rotation, tile);
+                blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE, info.rotation, info.mirrored, tile);
             }
+
+            // Store spikes
             else if (spikeLookup.find(tile)!=spikeLookup.end()) {
                 SpikeInfo info=spikeLookup[tile];
-                spikes.emplace_back(baseX+TILE_SIZE*3/8, baseY+TILE_SIZE/4, TILE_SIZE/4, TILE_SIZE/2, info.rotation, info.mirrored, tile);
+                if (tile[1]=='A' || tile[1]=='C') { // Small spike
+                    if (info.rotation==0) {
+                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE*7/10.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                    else if (info.rotation==90) {
+                        spikes.emplace_back(baseX+TILE_SIZE/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                    else if (info.rotation==180) {
+                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE/10.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                    else if (info.rotation==270) {
+                        spikes.emplace_back(baseX+TILE_SIZE*7/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                }
+                else if (tile[1]=='E') { // Big spike
+                    if (info.rotation==0 || info.rotation==180) {
+                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE*3/10.0f, TILE_SIZE/5.0f, TILE_SIZE*2/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                    else if (info.rotation==90 || info.rotation==270) {
+                        spikes.emplace_back(baseX+TILE_SIZE*3/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
+                    }
+                }
             }
+
+            // Store jump pads
+            else if (jumpPadLookup.find(tile)!=jumpPadLookup.end()) {
+                JumpPadInfo info=jumpPadLookup[tile];
+                if (tile[0]=='J' || tile[0]=='P') {
+                    if (info.rotation==0) {
+                        jumpPads.emplace_back(baseX+TILE_SIZE/12.0f, baseY+TILE_SIZE*13/15.0f, TILE_SIZE*10/12.0f, TILE_SIZE/6.0f, info.rotation, tile);
+                    }
+                    else if (info.rotation==180) {
+                        jumpPads.emplace_back(baseX+TILE_SIZE/12.0f, baseY-TILE_SIZE/30.0f, TILE_SIZE*10/12.0f, TILE_SIZE/6.0f, info.rotation, tile);
+                    }
+                }
+                else if (tile[0]=='S') { // Spider pad
+                    if (info.rotation==0) {
+                        jumpPads.emplace_back(baseX+TILE_SIZE/30.0f, baseY+TILE_SIZE*3/4.0f, TILE_SIZE*14/15.0f, TILE_SIZE*2/5.0f, info.rotation, tile);
+                    }
+                    else if (info.rotation==90) {
+                        jumpPads.emplace_back(baseX-TILE_SIZE*3/20.0f, baseY+TILE_SIZE/30.0f, TILE_SIZE*2/5.0f, TILE_SIZE*14/15.0f, info.rotation, tile);
+                    }
+                    else if (info.rotation==180) {
+                        jumpPads.emplace_back(baseX+TILE_SIZE/30.0f, baseY-TILE_SIZE*3/20.0f, TILE_SIZE*14/15.0f, TILE_SIZE*2/5.0f, info.rotation, tile);
+                    }
+                    else if (info.rotation==270) {
+                        jumpPads.emplace_back(baseX+TILE_SIZE*3/4.0f, baseY+TILE_SIZE/30.0f, TILE_SIZE*2/5.0f, TILE_SIZE*14/15.0f, info.rotation, tile);
+                    }
+                }
+            }
+
+            // Store jump orbs
             else {
                 switch (tile[0]) {
                 case 'Y': // Yellow orb
                 case 'B': // Blue orb
                 case 'G': { // Green orb
-                    jumpOrbs.emplace_back(baseX-TILE_SIZE/10, baseY-TILE_SIZE/10, TILE_SIZE*12/10, TILE_SIZE*12/10, tile[0]);
+                    jumpOrbs.emplace_back(baseX-TILE_SIZE/10.0f, baseY-TILE_SIZE/10.0f, TILE_SIZE*12/10.0f, TILE_SIZE*12/10.0f, tile[0]);
                     break;
                     }
-
-                case 'J': // Yellow pad
-                case 'P': { // Pink pad
-                    jumpPads.emplace_back(baseX+TILE_SIZE/12, baseY+TILE_SIZE*13/15, TILE_SIZE*10/12, TILE_SIZE/6, tile[0]);
-                    break;
-                    }
-                case 'S': // Spider pad
-                    jumpPads.emplace_back(baseX+TILE_SIZE/30, baseY+TILE_SIZE*3/4, TILE_SIZE*14/15, TILE_SIZE*2/5, tile[0]);
-                    break;
                 }
             }
         }
+
         row++;
     }
 
@@ -521,34 +567,51 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
                  const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double deltaTime) {
     // Render orbs
     for (const auto &orb : jumpOrbs) {
-        SDL_FRect renderOrb={orb.getHitbox().x+TILE_SIZE/10, orb.getHitbox().y+TILE_SIZE/10, TILE_SIZE, TILE_SIZE};
+        SDL_FRect renderOrb={orb.getHitbox().x+TILE_SIZE/10.0f, orb.getHitbox().y+TILE_SIZE/10.0f, TILE_SIZE, TILE_SIZE};
         switch (orb.getType()) {
         case 'Y': // Yellow
-            yellowOrbTexture.render(renderOrb);
+            orbPadSheetTexture.render(renderOrb, &orbClips[0], 0, nullptr, SDL_FLIP_NONE);
             break;
         case 'B': // Blue
-            blueOrbTexture.render(renderOrb);
+            orbPadSheetTexture.render(renderOrb, &orbClips[1], 0, nullptr, SDL_FLIP_NONE);
             break;
         case 'G': // Green
             orb.updateRotation(deltaTime);
-            greenOrbTexture.render(renderOrb, nullptr, orb.rotationAngle, nullptr, SDL_FLIP_NONE);
+            orbPadSheetTexture.render(renderOrb, &orbClips[2], orb.rotationAngle, nullptr, SDL_FLIP_NONE);
             break;
         }
     }
 
     // Render pads
     for (const auto &pad : jumpPads) {
-        SDL_FRect renderPad=pad.getHitbox();
-        switch (pad.getType()) {
-        case 'J': // Yellow
-            yellowPadTexture.render(renderPad);
-            break;
-        case 'S': // Spider
-            spiderPadTexture.render(renderPad);
-            break;
-        case 'P': // Pink
-            pinkPadTexture.render(renderPad);
-            break;
+        string type=pad.getType();
+        if (jumpPadLookup.find(type)!=jumpPadLookup.end()) {
+            JumpPadInfo info=jumpPadLookup[type];
+            SDL_FRect renderPad;
+            if (type[0]=='J' || type[0]=='P') {
+                if (info.rotation==0) {
+                    renderPad={pad.getHitbox().x-TILE_SIZE/12.0f, pad.getHitbox().y-TILE_SIZE*13/15.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==180) {
+                    renderPad={pad.getHitbox().x-TILE_SIZE/12.0f, pad.getHitbox().y+TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
+                }
+            }
+            else if (type[0]=='S') { // Spider
+                if (info.rotation==0) {
+                    renderPad={pad.getHitbox().x-TILE_SIZE/30.0f, pad.getHitbox().y-TILE_SIZE*3/4.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==90) {
+                    renderPad={pad.getHitbox().x+TILE_SIZE*3/20.0f, pad.getHitbox().y-TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==180) {
+                    renderPad={pad.getHitbox().x-TILE_SIZE/30.0f, pad.getHitbox().y+TILE_SIZE*3/20.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==270) {
+                    renderPad={pad.getHitbox().x-TILE_SIZE*3/4.0f, pad.getHitbox().y-TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
+                }
+            }
+            orbPadSheetTexture.render(renderPad, &padClips[info.clipIndex], info.rotation, nullptr, SDL_FLIP_NONE);
+            SDL_RenderDrawRectF(gRenderer, &pad.getHitbox());
         }
     }
 
@@ -558,7 +621,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
         if (blockLookup.find(type)!=blockLookup.end()) {
             BlockInfo info=blockLookup[type];
             SDL_FRect renderBlock=block.getHitbox();
-            blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, SDL_FLIP_NONE);
+            blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
         }
     }
 
@@ -567,7 +630,29 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
         string type=spike.getType();
         if (spikeLookup.find(type)!=spikeLookup.end()) {
             SpikeInfo info=spikeLookup[type];
-            SDL_FRect renderSpike={spike.getHitbox().x-TILE_SIZE*3/8, spike.getHitbox().y-TILE_SIZE/4, TILE_SIZE, TILE_SIZE};
+            SDL_FRect renderSpike;
+            if (type[1]=='A' || type[1]=='C') { // Small spike
+                if (info.rotation==0) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE*7/10.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==90) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==180) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE/10.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==270) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE*7/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
+                }
+            }
+            else if (type[1]=='E') { // Big spike
+                if (info.rotation==0 || info.rotation==180) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE*3/10.0f, TILE_SIZE, TILE_SIZE};
+                }
+                else if (info.rotation==90 || info.rotation==270) {
+                    renderSpike={spike.getHitbox().x-TILE_SIZE*3/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
+                }
+            }
             blockSheetTexture.render(renderSpike, &spikeClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
         }
     }
@@ -701,7 +786,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (currentStatus==START) {
-                    loadLevel("Resources/Levels/Level1.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
                     cube.reset();
                     fadeAlpha=0;
                     currentStatus=PLAYING;
@@ -728,7 +813,7 @@ int main(int argc, char *argv[]) {
                     dead=false;
                     fadeAlpha=0;
                     cube.reset();
-                    loadLevel("Resources/Levels/Level1.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
                     currentStatus=PLAYING;
                     continue;
                 }
