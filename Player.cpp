@@ -251,8 +251,8 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
     SDL_FRect normalHitbox=getHitbox();
     SDL_FRect SPadHitbox=getSPadHitbox();
 
-    // Touch spider pad in normal gravity
-    if (reverseGravity) {
+    // Teleport to ceiling
+    if (pad.angle==0) {
         // Set up position to teleport to
         float closestPosY=0;
 
@@ -280,11 +280,12 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
             }
         }
 
+        reverseGravity=true;
         mPosY=closestPosY;
     }
 
-    // Touch spider pad in reverse gravity
-    else {
+    // Teleport to floor
+    else if (pad.angle==90 || pad.angle==180 || pad.angle==270) {
         // Set up position to teleport to
         float closestPosY=SCREEN_HEIGHT;
 
@@ -312,6 +313,7 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
             }
         }
 
+        reverseGravity=false;
         mPosY=closestPosY;
     }
 }
@@ -329,36 +331,32 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
     // Orb interactions
     for (auto &orb : jumpOrbs) {
         if (orb.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT) && isJumpHeld && canJump) {
-            char orbType=orb.getType();
-            if (!reverseGravity) {
-                switch (orbType) {
-                case 'Y': // Yellow orb
-                    mVelY=JUMP_VELOCITY;
-                    break;
-                case 'B': // Blue orb
+            char type=orb.getType();
+            switch (type) {
+            case 'Y': // Yellow orb
+                if (!reverseGravity) mVelY=JUMP_VELOCITY;
+                else mVelY=-JUMP_VELOCITY;
+                break;
+            case 'B': // Blue orb
+                if (!reverseGravity) {
                     reverseGravity=true;
                     if (mVelY>0) mVelY=0;
-                    break;
-                case 'G': // Green orb
-                    reverseGravity=true;
-                    mVelY=-JUMP_VELOCITY;
-                    break;
                 }
-            }
-            else {
-                switch (orbType) {
-                case 'Y':
-                    mVelY=-JUMP_VELOCITY;
-                    break;
-                case 'B':
+                else {
                     reverseGravity=false;
                     if (mVelY<0) mVelY=0;
-                    break;
-                case 'G':
+                }
+                break;
+            case 'G': // Green orb
+                if (!reverseGravity) {
+                    reverseGravity=true;
+                    mVelY=-JUMP_VELOCITY;
+                }
+                else {
                     reverseGravity=false;
                     mVelY=JUMP_VELOCITY;
-                    break;
                 }
+                break;
             }
             canJump=false;
         }
@@ -368,36 +366,20 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
     for (auto &pad : jumpPads) {
         if (pad.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             if (pad.canTrigger()) {
-                std::string padType=pad.getType();
-                if (!reverseGravity) {
-                    switch (padType[0]) {
-                    case 'J': // Yellow pad
-                        mVelY=JUMP_VELOCITY*1.37;
-                        break;
-                    case 'S': // Spider pad
-                        reverseGravity=true;
-                        findClosestRectSPad(pad, blocks, spikes);
-                        mVelY=0.0;
-                        break;
-                    case 'P': // Pink pad
-                        mVelY=JUMP_VELOCITY;
-                        break;
-                    }
-                }
-                else {
-                    switch (padType[0]) {
-                    case 'J':
-                        mVelY=-JUMP_VELOCITY*1.37;
-                        break;
-                    case 'S':
-                        reverseGravity=false;
-                        findClosestRectSPad(pad, blocks, spikes);
-                        mVelY=0.0;
-                        break;
-                    case 'P':
-                        mVelY=-JUMP_VELOCITY;
-                        break;
-                    }
+                std::string type=pad.getType();
+                switch (type[0]) {
+                case 'J': // Yellow pad
+                    if (!reverseGravity) mVelY=JUMP_VELOCITY*1.37;
+                    else mVelY=-JUMP_VELOCITY*1.37;
+                    break;
+                case 'P': // Pink pad
+                    if (!reverseGravity) mVelY=JUMP_VELOCITY;
+                    else mVelY=-JUMP_VELOCITY;
+                    break;
+                case 'S': // Spider pad
+                    findClosestRectSPad(pad, blocks, spikes);
+                    mVelY=0;
+                    break;
                 }
                 pad.markUsed();
             }

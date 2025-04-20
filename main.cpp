@@ -34,7 +34,7 @@ SDL_Color textColor={255, 255, 255};
 // Textures
 LTexture winMsgTexture;
 LTexture gameTitleTexture;
-LTexture instructionTexture[1000];
+LTexture instructionTexture[100];
 
 LTexture cubeTexture;
 LTexture blockSheetTexture;
@@ -135,11 +135,11 @@ bool loadMedia() {
             !instructionTexture[3].loadFromRenderedText("Press up/down to select settings", textColor, gMediumFont) ||
             !instructionTexture[4].loadFromRenderedText("Press Enter to finish", textColor, gMediumFont) ||
 
-            !instructionTexture[100].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
+            !instructionTexture[10].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
 
-            !instructionTexture[200].loadFromRenderedText("Click block: ", textColor, gMediumFont) ||
-            !instructionTexture[201].loadFromRenderedText("Passive income: ", textColor, gMediumFont) ||
-            !instructionTexture[202].loadFromRenderedText("Total money: ", textColor, gMediumFont) ||
+            !instructionTexture[20].loadFromRenderedText("Click block: ", textColor, gMediumFont) ||
+            !instructionTexture[21].loadFromRenderedText("Passive income: ", textColor, gMediumFont) ||
+            !instructionTexture[22].loadFromRenderedText("Total money: ", textColor, gMediumFont) ||
 
             !gameTitleTexture.loadFromRenderedText("Die to Win", textColor, gXtraFont) ||
             !winMsgTexture.loadFromRenderedText("Congratulations", textColor, gLargeFont)) {
@@ -282,7 +282,7 @@ void close() {
         backgroundTexture[i].free();
     }
 
-    for (int i=0; i<1000; i++) {
+    for (int i=0; i<100; i++) {
         instructionTexture[i].free();
     }
     gameTitleTexture.free();
@@ -389,6 +389,7 @@ unordered_map<string, BlockInfo> blockLookup={
     {"1LL", {24, 270, SDL_FLIP_NONE}},  // Line block left
 
 /***********************************************************************************************/
+
     // Platform tip[25] with spike
     {"3AU", {25, 0, SDL_FLIP_NONE}},    // Facing up
     {"3AR", {25, 90, SDL_FLIP_NONE}},   // Facing right
@@ -611,7 +612,6 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
                 }
             }
             orbPadSheetTexture.render(renderPad, &padClips[info.clipIndex], info.rotation, nullptr, SDL_FLIP_NONE);
-            SDL_RenderDrawRectF(gRenderer, &pad.getHitbox());
         }
     }
 
@@ -659,42 +659,42 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
 }
 
 void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting) {
-    /*instructionTexture[200].loadFromRenderedText("Click block: "+to_string(cube.getGainPerHit()), textColor, gMediumFont);
-    instructionTexture[200].render(SCREEN_WIDTH-instructionTexture[200].getWidth(), TILE_SIZE);
+    /*instructionTexture[20].loadFromRenderedText("Click block: "+to_string(cube.getGainPerHit()), textColor, gMediumFont);
+    instructionTexture[20].render(SCREEN_WIDTH-instructionTexture[20].getWidth(), TILE_SIZE);
 
-    instructionTexture[201].loadFromRenderedText("Passive income: "+to_string(cube.getPassiveIncome()), textColor, gMediumFont);
-    instructionTexture[201].render(SCREEN_WIDTH-instructionTexture[201].getWidth(), 2*TILE_SIZE);
+    instructionTexture[21].loadFromRenderedText("Passive income: "+to_string(cube.getPassiveIncome()), textColor, gMediumFont);
+    instructionTexture[21].render(SCREEN_WIDTH-instructionTexture[21].getWidth(), 2*TILE_SIZE);
 
-    instructionTexture[202].loadFromRenderedText("Total money: "+to_string(cube.getTotalMoney()), textColor, gMediumFont);
-    instructionTexture[202].render(SCREEN_WIDTH-instructionTexture[202].getWidth(), 3*TILE_SIZE);*/
+    instructionTexture[22].loadFromRenderedText("Total money: "+to_string(cube.getTotalMoney()), textColor, gMediumFont);
+    instructionTexture[22].render(SCREEN_WIDTH-instructionTexture[22].getWidth(), 3*TILE_SIZE);*/
 
     for (const Block &block : blocks) {
         if (block.getType()=="1I1" || block.getType()=="1I2" || block.getType()=="1I3" || block.getType()=="1I4") {
-            instructionTexture[250].loadFromRenderedText(to_string(block.counter), textColor, gTinyFont);
-            instructionTexture[250].render(block.getHitbox().x+TILE_SIZE/12, block.getHitbox().y);
+            instructionTexture[25].loadFromRenderedText(to_string(block.counter), textColor, gTinyFont);
+            instructionTexture[25].render(block.getHitbox().x+TILE_SIZE/12, block.getHitbox().y);
         }
         if (block.getType()=="1S") {
-            instructionTexture[300].loadFromRenderedText("Settings", textColor, gMediumFont);
-            instructionTexture[300].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[300].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[300].getHeight());
+            instructionTexture[30].loadFromRenderedText("Settings", textColor, gMediumFont);
+            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                           block.getHitbox().y-instructionTexture[30].getHeight());
         }
         if (block.getType()=="1P") {
-            instructionTexture[301].loadFromRenderedText("Play", textColor, gMediumFont);
-            instructionTexture[301].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[301].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[301].getHeight());
+            instructionTexture[30].loadFromRenderedText("Play", textColor, gMediumFont);
+            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                           block.getHitbox().y-instructionTexture[30].getHeight());
         }
         if (block.getType()=="1C") {
-            instructionTexture[302].loadFromRenderedText("Credits", textColor, gMediumFont);
-            instructionTexture[302].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[302].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[302].getHeight());
+            instructionTexture[30].loadFromRenderedText("Credits", textColor, gMediumFont);
+            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                           block.getHitbox().y-instructionTexture[30].getHeight());
         }
         if (block.getType()=="1K0") {
             gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
         }
         if (block.getType()=="1K2") {
-            instructionTexture[303].loadFromRenderedText("v0.07 ", textColor, gSmallFont);
-            instructionTexture[303].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[303].getWidth(),
-                                           block.getHitbox().y+block.getHitbox().h-instructionTexture[303].getHeight());
+            instructionTexture[30].loadFromRenderedText("v0.08 ", textColor, gSmallFont);
+            instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
+                                           block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
         }
     }
 }
@@ -888,14 +888,14 @@ int main(int argc, char *argv[]) {
                     SDL_RenderFillRectF(gRenderer, &dimOverlay);
 
                     SDL_FRect winMsgRect={(SCREEN_WIDTH-winMsgTexture.getWidth())/2,
-                                          (SCREEN_HEIGHT-winMsgTexture.getHeight()-instructionTexture[100].getHeight())/2,
+                                          (SCREEN_HEIGHT-winMsgTexture.getHeight()-instructionTexture[10].getHeight())/2,
                                           winMsgTexture.getWidth(),
                                           winMsgTexture.getHeight()};
                     winMsgTexture.setAlpha(static_cast<Uint8>(fadeAlpha)*255/200);
                     winMsgTexture.render(winMsgRect);
 
-                    instructionTexture[100].setAlpha(static_cast<Uint8>(fadeAlpha)*255/200);
-                    instructionTexture[100].render((SCREEN_WIDTH-instructionTexture[100].getWidth())/2, winMsgRect.y+winMsgRect.h);
+                    instructionTexture[10].setAlpha(static_cast<Uint8>(fadeAlpha)*255/200);
+                    instructionTexture[10].render((SCREEN_WIDTH-instructionTexture[10].getWidth())/2, winMsgRect.y+winMsgRect.h);
                 }
 
                 SDL_RenderPresent(gRenderer);
