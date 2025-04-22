@@ -1,6 +1,6 @@
 1C0  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1C1
 1WV  SR   0    0    0    SD   0    SL   0    0    0    0    0    0    0    0    0    0    1WV
-1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1WV
+1WV  0    0    0    0    0    0    0    YY   0    YX   0    YXY  0    B    0    0    G    1WV
 1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1WV
 1WV  0    0    0    0    3AR  2AR  3AD  0    3CR  2CR  3CD  0    3ER  2ER  3ED  0    0    1WV
 1WV  0    0    0    2AUM 2AU  0    2AD  0    2CU  0    2CD  0    2EU  0    2ED  0    0    1WV

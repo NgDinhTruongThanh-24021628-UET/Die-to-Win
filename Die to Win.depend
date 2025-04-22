@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1745140968 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745337140 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -14,13 +14,13 @@
 	"LevelObjs.h"
 	"Enums.h"
 
-1745077668 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745336688 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 	"Enums.h"
 
-1745141380 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745335283 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<cmath>
@@ -88,5 +88,5 @@
 
 1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
 
-1745065100 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
+1745334592 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
 

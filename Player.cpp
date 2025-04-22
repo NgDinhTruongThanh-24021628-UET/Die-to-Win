@@ -11,8 +11,8 @@ extern LTexture cubeTexture;
 
 // Constructor
 Player::Player() {
-    mPosX=TILE_SIZE-TILE_SIZE*11/18;
-    mPosY=SCREEN_HEIGHT-PLAYER_HEIGHT-TILE_SIZE*9/18;
+    mPosX=2*TILE_SIZE-TILE_SIZE*11/18;
+    mPosY=SCREEN_HEIGHT-3*PLAYER_HEIGHT-TILE_SIZE*9/18;
     mVelX=0;
     mVelY=0;
     isJumpHeld=false;
@@ -30,8 +30,8 @@ Player::Player() {
 }
 
 void Player::reset() {
-    mPosX=TILE_SIZE-TILE_SIZE*11/18;
-    mPosY=SCREEN_HEIGHT-PLAYER_HEIGHT-TILE_SIZE*9/18;
+    mPosX=2*TILE_SIZE-TILE_SIZE*11/18;
+    mPosY=SCREEN_HEIGHT-3*PLAYER_HEIGHT-TILE_SIZE*9/18;
     mVelX=0;
     mVelY=0;
     isJumpHeld=false;
@@ -340,11 +340,11 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
             case 'B': // Blue orb
                 if (!reverseGravity) {
                     reverseGravity=true;
-                    if (mVelY>0) mVelY=0;
+                    mVelY=-GRAVITY/8;
                 }
                 else {
                     reverseGravity=false;
-                    if (mVelY<0) mVelY=0;
+                    mVelY=GRAVITY/8;
                 }
                 break;
             case 'G': // Green orb
