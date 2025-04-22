@@ -1,0 +1,11 @@
+1C0  3CD  3CD  3CD  1TU  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1C1
+1WV  2CD  2CD  2CD  1WV  0    0    0    0    SD   0    0    0    0    0    0    0    0    1WV
+1WV  0    0    0    1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    1WV
+1WV  0    0    0    1WV  0    Y    0    0    0    0    0    0    0    0    0    0    0    1WV
+1WV  0    0    1PL  1C2  0    0    0    0    0    0    BXY  0    0    0    0    0    0    1WV
+1WV  0    0    SD   0    0    0    0    0    0    0    0    0    0    0    0    Y    0    1WV
+1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1WV
+1WV  0    0    0    0    0    0    0    1PL  1WH  1PR  0    0    0    0    0    0    0    1WV
+1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1PL  1TR
+1WV  0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1WV
+1C3  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1WH  1C2
