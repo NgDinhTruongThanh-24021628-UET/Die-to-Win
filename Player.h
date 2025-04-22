@@ -18,16 +18,16 @@ public:
     const int PLAYER_HEIGHT=TILE_SIZE;
 
     // Horizontal velocity
-    static constexpr double X_VELOCITY=600.0;
+    static constexpr double X_VELOCITY=640.0;
 
     // Initial velocity when jump
-    static constexpr double JUMP_VELOCITY=-1390.0;
+    static constexpr double JUMP_VELOCITY=-1400.0;
 
     // Gravity
     static constexpr double GRAVITY=6000.0;
 
     // Fall speed limit
-    static constexpr double TERMINAL_VELOCITY=4000.0;
+    static constexpr double TERMINAL_VELOCITY=5000.0;
 
     // Constructor
     Player();

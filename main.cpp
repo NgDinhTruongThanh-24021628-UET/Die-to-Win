@@ -447,6 +447,32 @@ unordered_map<string, SpikeInfo> spikeLookup={ // Note: Spike platform migrated 
     {"2EL", {2, 270, SDL_FLIP_NONE}},    // Facing left
 };
 
+// Identify jump orb type
+struct JumpOrbInfo {
+    int clipIndex;
+    float offsetX;
+    float offsetY;
+};
+unordered_map<string, JumpOrbInfo> jumpOrbLookup={
+    // Yellow orb
+    {"Y", {0, 0, 0}},                           // Normal
+    {"YX", {0, TILE_SIZE/2, 0}},                // X increase
+    {"YY", {0, 0, TILE_SIZE/2}},                // Y increase
+    {"YXY", {0, TILE_SIZE/2, TILE_SIZE/2}},     // Both increase
+
+    // Blue orb
+    {"B", {1, 0, 0}},
+    {"BX", {1, TILE_SIZE/2, 0}},
+    {"BY", {1, 0, TILE_SIZE/2}},
+    {"BXY", {1, TILE_SIZE/2, TILE_SIZE/2}},
+
+    // Green orb
+    {"G", {2, 0, 0}},
+    {"GX", {2, TILE_SIZE/2, 0}},
+    {"GY", {2, 0, TILE_SIZE/2}},
+    {"GXY", {2, TILE_SIZE/2, TILE_SIZE/2}},
+};
+
 // Identify jump pad type
 struct JumpPadInfo {
     int clipIndex;
@@ -546,15 +572,9 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
             }
 
             // Store jump orbs
-            else {
-                switch (tile[0]) {
-                case 'Y': // Yellow orb
-                case 'B': // Blue orb
-                case 'G': { // Green orb
-                    jumpOrbs.emplace_back(baseX-TILE_SIZE/10.0f, baseY-TILE_SIZE/10.0f, TILE_SIZE*12/10.0f, TILE_SIZE*12/10.0f, tile[0]);
-                    break;
-                    }
-                }
+            else if (jumpOrbLookup.find(tile)!=jumpOrbLookup.end()) {
+                JumpOrbInfo info=jumpOrbLookup[tile];
+                jumpOrbs.emplace_back(baseX-TILE_SIZE/10.0f+info.offsetX, baseY-TILE_SIZE/10.0f+info.offsetY, TILE_SIZE*12/10.0f, TILE_SIZE*12/10.0f, tile[0]);
             }
         }
 
@@ -692,12 +712,16 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
             gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
         }
         if (block.getType()=="1K2") {
-            instructionTexture[30].loadFromRenderedText("v0.08 ", textColor, gSmallFont);
+            instructionTexture[30].loadFromRenderedText("v0.1 ", textColor, gSmallFont);
             instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
                                            block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
         }
     }
 }
+
+const int ALL_LEVELS=6;
+string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error"};
+static int levelIndex=1;
 
 int main(int argc, char *argv[]) {
     if (!init()) {
@@ -708,9 +732,6 @@ int main(int argc, char *argv[]) {
             cout << "Failed to load media." << endl;
         }
         else {
-            // Load level, will try to store move levels later
-            loadLevel("Resources/Levels/Menu.txt", blocks, spikes, jumpOrbs, jumpPads);
-
             // Delta time, to keep physics consistent across all refresh rates
             Uint64 NOW=SDL_GetPerformanceCounter();
             Uint64 LAST=0;
@@ -780,13 +801,13 @@ int main(int argc, char *argv[]) {
                             quit=true;
                         }
                     }
-                    else if (currentStatus==MENU || currentStatus==PLAYING) {
+                    else if (currentStatus==PLAYING) {
                         cube.handleEvent(e);
                     }
                 }
 
                 if (currentStatus==START) {
-                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
                     cube.reset();
                     fadeAlpha=0;
                     currentStatus=PLAYING;
@@ -798,14 +819,28 @@ int main(int argc, char *argv[]) {
                     cube.move(blocks, jumpOrbs, currentStatus, deltaTime);
                     cube.interact(blocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
                     if (dead) {
-                        currentStatus=WIN;
+                        levelIndex++;
+                        if (levelIndex<ALL_LEVELS) {
+                            dead=false;
+                            currentStatus=START;
+                            //SDL_Delay(200);
+                        }
+                        else {
+                            currentStatus=WIN;
+                        }
                     }
                 }
 
                 // Menu screen
                 if (currentStatus==MENU) {
-                    cube.move(blocks, jumpOrbs, currentStatus, deltaTime);
-                    cube.interact(blocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
+                    loadLevel("Resources/Levels/Menu.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    currentStatus=PLAYING;
+                }
+
+                // Test level
+                if (currentStatus==TEST) {
+                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    currentStatus=PLAYING;
                 }
 
                 // Restart after win
@@ -813,7 +848,8 @@ int main(int argc, char *argv[]) {
                     dead=false;
                     fadeAlpha=0;
                     cube.reset();
-                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    levelIndex=1;
+                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
                     currentStatus=PLAYING;
                     continue;
                 }
@@ -853,12 +889,13 @@ int main(int argc, char *argv[]) {
                 // Settings screen
                 if (currentStatus==SETTINGS) {
                     cube.resetBool();
+                    loadLevel("Resources/Levels/Settings.txt", blocks, spikes, jumpOrbs, jumpPads);
 
-                    float textPosY=(SCREEN_HEIGHT-3*instructionTexture[3].getHeight())/2;
+                    float textPosY=TILE_SIZE*9/18;
                     fadeAlpha=200;
                     SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
                     SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
-                    SDL_FRect dimOverlay={SCREEN_WIDTH/10, textPosY, SCREEN_WIDTH*8/10, 3*instructionTexture[3].getHeight()};
+                    SDL_FRect dimOverlay={TILE_SIZE*7/18, textPosY, SCREEN_WIDTH-TILE_SIZE*14/18, 3*instructionTexture[3].getHeight()};
                     SDL_RenderFillRectF(gRenderer, &dimOverlay);
 
                     instructionTexture[3].render((SCREEN_WIDTH-instructionTexture[3].getWidth())/2, textPosY);

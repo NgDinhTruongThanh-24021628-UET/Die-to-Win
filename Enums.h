@@ -23,6 +23,7 @@ enum GameStatus {
     CREDITS,
     WIN,
     RESTART,
-    STATUS_COUNT
+    STATUS_COUNT,
+    TEST
 };
 extern GameStatus currentStatus;
