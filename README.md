@@ -3,6 +3,9 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+### v0.1
+The first 5 levels of Die to Win are here! Enjoy!
+
 ### v0.081
 - Spider pad rework
 
