@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
@@ -14,6 +15,21 @@ extern SDL_Renderer *gRenderer;
 extern LTexture instructionTexture[1000];
 extern TTF_Font *gSmallFont;
 extern SDL_Color textColor;
+extern bool uniqueDigits;
+
+// Create random password
+#include <algorithm>
+#include <random>
+#include <ctime>
+std::vector<int> enigmaPassword;
+void generateEnigmaPassword() {
+    std::vector<int> digits={0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    std::mt19937 g(static_cast<unsigned int>(time(0)));
+    std::shuffle(digits.begin(), digits.end(), g);
+
+    if (enigmaPassword.empty()) enigmaPassword=std::vector<int>(digits.begin(), digits.begin()+4);
+}
 
 // Block functions start
 
@@ -26,6 +42,8 @@ Block::Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, c
 
 bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX,
                             double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const {
+    if (blockType[1]=='J') return false;
+
     bool collided=false;
 
     // From left side
@@ -76,7 +94,8 @@ bool Block::checkYCollision(double playerX, double &playerY, double &nextPlayerY
     if (playerY>=hitbox.y+hitbox.h &&
         nextPlayerY<=hitbox.y+hitbox.h && // If player will go through platform
         playerX+PLAYER_WIDTH>hitbox.x &&
-        playerX<hitbox.x+hitbox.w) { // And will collide with platform
+        playerX<hitbox.x+hitbox.w && // And will collide with platform
+        blockType[1]!='J') { // Ignore jump-through blocks
 
         nextPlayerY=hitbox.y+hitbox.h;
         collided=true;
@@ -97,65 +116,21 @@ const SDL_FRect &Block::getHitbox() const {
 const string &Block::getType() const {
     return blockType;
 }
-void Block::changePosition(float x, float y) {
-    hitbox.x=x;
-    hitbox.y=y;
+void Block::movingBlock(double deltaTime) {
+
 }
 
 bool Block::isInteractable() const {
-    string type[8]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C"};
-    for (int i=0; i<8; i++) {
+    string type[10]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C", "1BI", "1IN"};
+    for (int i=0; i<10; i++) {
         if (blockType==type[i]) return true;
     }
     return false;
 }
-void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus, vector<Block> &blocks) {
+void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
+                     vector<Block> &blocks, vector<Spike> &spikes, const string &levelName, double deltaTime) {
     if (!isInteractable()) return;
-    if (blockType=="1IP") {
-        totalMoney+=gainPerHit;
-    }
-    else if (blockType=="1I3") {
-        if (counter>=25) counter=25;
-        else {
-            if (totalMoney>=(unsigned long long)value) {
-                if (counter==0) gainPerHit*=5;
-                else gainPerHit+=increment;
-                totalMoney-=value;
-                increment*=2;
-                value*=2;
-                counter++;
-            }
-        }
-    }
-    else if (blockType=="1I4") {
-        if (counter>=25) counter=25;
-        else {
-            if (totalMoney>=(unsigned long long)value) {
-                passiveIncome+=increment;
-                totalMoney-=value;
-                increment*=2;
-                value*=2;
-                counter++;
-            }
-        }
-    }
-    else if (blockType=="1I2") {
-        if (counter>=5) counter=5;
-        else {
-            if (counter==0) value=100;
-            if (totalMoney>=(unsigned long long)value) {
-                for (auto &block : blocks) {
-                    if (block.getType()=="1IP") {
-                        block.changePosition(block.getHitbox().x, block.getHitbox().y+TILE_SIZE/3);
-                    }
-                }
-                totalMoney-=value;
-                value*=20;
-                counter++;
-            }
-        }
-    }
-    else if (blockType=="1S") {
+    if (blockType=="1S") {
         currentStatus=SETTINGS;
     }
     else if (blockType=="1P") {
@@ -163,6 +138,115 @@ void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passi
     }
     else if (blockType=="1C") {
         currentStatus=CREDITS;
+    }
+    if (levelName=="Cookies") {
+        if (blockType=="1IP") {
+            totalMoney+=gainPerHit;
+        }
+        else if (blockType=="1I3") {
+            if (counter>=25) counter=25;
+            else {
+                if (totalMoney>=(unsigned long long)value) {
+                    if (counter==0) gainPerHit*=5;
+                    else gainPerHit+=increment;
+                    totalMoney-=value;
+                    increment*=2;
+                    value*=2;
+                    counter++;
+                }
+            }
+        }
+        else if (blockType=="1I4") {
+            if (counter>=25) counter=25;
+            else {
+                if (totalMoney>=(unsigned long long)value) {
+                    passiveIncome+=increment;
+                    totalMoney-=value;
+                    increment*=2;
+                    value*=2;
+                    counter++;
+                }
+            }
+        }
+        else if (blockType=="1I2") {
+            if (counter>=5) counter=5;
+            else {
+                if (counter==0) value=100;
+                if (totalMoney>=(unsigned long long)value) {
+                    for (auto &block : blocks) {
+                        if (block.getType()=="1IP") {
+                            //block.changePosition(block.getHitbox().x, block.getHitbox().y+TILE_SIZE/3);
+                        }
+                    }
+                    totalMoney-=value;
+                    value*=20;
+                    counter++;
+                }
+            }
+        }
+    }
+    else if (levelName=="Enigma") {
+        if (spikes.empty()) spikes.emplace_back(800+TILE_SIZE*2/5.0f, 800+TILE_SIZE*3/10.0f, TILE_SIZE/5.0f, TILE_SIZE*2/5.0f, 0, SDL_FLIP_NONE, "2EU");
+        generateEnigmaPassword();
+        if (blockType=="1BI") {
+            counter++;
+            if (counter>=10) counter=0;
+        }
+        else if (blockType=="1IN") {
+            vector<Block*> digits;
+            for (auto &block : blocks) {
+                if (block.getType()=="1BI") {
+                    digits.push_back(&block);
+                }
+            }
+
+            if (digits.size()!=enigmaPassword.size()) return;
+            for (int i=0; i<int(digits.size())-1; i++) {
+                for (int j=i+1; j<int(digits.size()); j++) {
+                    if (digits[i]->counter==digits[j]->counter) {
+                        uniqueDigits=false;
+                        return;
+                    }
+                }
+            }
+            uniqueDigits=true;
+
+            int correctPos=0, wrongPos=0;
+            vector<bool> passwordUsed(enigmaPassword.size(), false);
+            vector<bool> guessUsed(digits.size(), false);
+            for (int i=0; i<int(digits.size()); i++) {
+                if (digits[i]->counter==enigmaPassword[i]) {
+                    correctPos++;
+                    passwordUsed[i]=guessUsed[i]=true;
+                }
+            }
+            for (int i=0; i<int(digits.size()); i++) {
+                if (guessUsed[i]) continue;
+                for (int j=0; j<int(enigmaPassword.size()); j++) {
+                    if (!passwordUsed[j] && digits[i]->counter==enigmaPassword[j]) {
+                        wrongPos++;
+                        passwordUsed[j]=true;
+                        break;
+                    }
+                }
+            }
+            for (auto &block : blocks) {
+                if (block.getType()=="1BG") {
+                    block.counter=correctPos;
+                }
+                else if (block.getType()=="1BO") {
+                    block.counter=wrongPos;
+                }
+            }
+            if (correctPos==4) {
+                for (auto &spike : spikes) {
+                    spike.unlocked=true;
+                    spike.realX=SCREEN_WIDTH-TILE_SIZE*2-TILE_SIZE*7/18.0f+TILE_SIZE*2/5.0f;
+                    spike.realY=SCREEN_HEIGHT-TILE_SIZE*3/2.0f+TILE_SIZE*3/10.0f;
+                }
+            }
+            digits.clear();
+        }
     }
 }
 
@@ -189,6 +273,21 @@ const SDL_FRect &Spike::getHitbox() const {
 }
 const string &Spike::getType() const {
     return spikeType;
+}
+void Spike::movingSpike(double deltaTime) {
+    if (unlocked) {
+        hitbox.x=realX;
+        float dy=realY-hitbox.y;
+        float distance=fabs(dy);
+        if (distance<1.0f) {
+            hitbox.y=realY;
+            unlocked=false;
+        }
+        else {
+            float moveStep=speed*deltaTime;
+            hitbox.y+=dy/distance*moveStep;
+        }
+    }
 }
 
 // Spike functions end

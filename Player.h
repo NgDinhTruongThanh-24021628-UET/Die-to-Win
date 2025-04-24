@@ -43,7 +43,7 @@ public:
     void forcePushIntoGap(std::vector<Block> &blocks);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, double deltaTime);
+    void move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime);
 
     // Helper function for spider pad interactions
     void findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::vector<Spike> &spikes);

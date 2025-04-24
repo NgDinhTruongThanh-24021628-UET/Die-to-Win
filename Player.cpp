@@ -158,7 +158,7 @@ void Player::forcePushIntoGap(std::vector<Block> &blocks) {
 }
 
 // Move player, platform physics included, deltaTime for consistent physics
-void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, double deltaTime) {
+void Player::move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime) {
 
     // Horizontal movement
     if (moveLeft && !moveRight) {
@@ -203,7 +203,8 @@ void Player::move(std::vector<Block> &blocks, std::vector<JumpOrb> &jumpOrbs, Ga
         if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT,
                                   onPlatform, hitCeiling, reverseGravity)) {
             mVelY=0.0;
-            if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus, blocks);
+            if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
+                                                  blocks, spikes, levelName, deltaTime);
         }
     }
     forcePushIntoGap(blocks);
@@ -390,7 +391,8 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
     }
 
     // Spike collision
-    for (const auto &spike : spikes) {
+    for (auto &spike : spikes) {
+        spike.movingSpike(deltaTime);
         if (spike.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             dead=true;
         }

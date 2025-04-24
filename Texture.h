@@ -18,6 +18,9 @@ public:
     // Load texture from text
     bool loadFromRenderedText(std::string textureText, SDL_Color textColor, TTF_Font *font);
 
+    // Update text texture if detected new text
+    bool setTextOnce(std::string newText, SDL_Color textColor, TTF_Font *font);
+
     // Destroy texture
     void free();
 
@@ -41,6 +44,9 @@ public:
 private:
     // Texture
     SDL_Texture *mTexture;
+
+    // Saved text
+    std::string lastRenderedText="";
 
     // Texture width + height
     float mWidth;

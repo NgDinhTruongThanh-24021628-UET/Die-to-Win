@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+/*#include <algorithm>
+#include <cstdlib>
+#include <ctime>*/
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -52,7 +55,7 @@ SDL_Color bgColor[BG_TOTAL_COLOR]={
 Background selectedBG=BLANK;
 LTexture backgroundTexture[TOTAL_BG];
 
-const int NUMBER_OF_BLOCKS=28;
+const int NUMBER_OF_BLOCKS=30;
 const int NUMBER_OF_SPIKES=3;
 const int NUMBER_OF_ORBS=3;
 const int NUMBER_OF_PADS=3;
@@ -240,6 +243,10 @@ bool loadMedia() {
         // Platform with big spike on top, spike facing up by default
         blockClips[27]={640, 160, 160, 160};
         spikeClips[2]={640, 0, 160, 160};
+
+        // Jump-through platforms
+        blockClips[28]={1440, 160, 160, 160};
+        blockClips[29]={1600, 160, 160, 160};
     }
 
     if (!cubeTexture.loadFromFile("Resources/Player.png")) {
@@ -387,6 +394,10 @@ unordered_map<string, BlockInfo> blockLookup={
     {"1LR", {24, 90, SDL_FLIP_NONE}},   // Line block right
     {"1LD", {24, 180, SDL_FLIP_NONE}},  // Line block down
     {"1LL", {24, 270, SDL_FLIP_NONE}},  // Line block left
+
+    {"1JL", {28, 0, SDL_FLIP_NONE}},        // Jump-through platform attached to left wall
+    {"1JR", {28, 0, SDL_FLIP_HORIZONTAL}},  // Jump-through platform attached to right wall
+    {"1J", {29, 0, SDL_FLIP_NONE}},         // Jump-through platform in the air
 
 /***********************************************************************************************/
 
@@ -642,6 +653,16 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
             BlockInfo info=blockLookup[type];
             SDL_FRect renderBlock=block.getHitbox();
             blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
+            if (type=="1BG") {
+                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 160);
+                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
+            }
+            if (type=="1BO") {
+                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(gRenderer, 255, 102, 0, 160);
+                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
+            }
         }
     }
 
@@ -678,7 +699,8 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
     }
 }
 
-void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting) {
+bool uniqueDigits=true;
+void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting, const string &levelName) {
     /*instructionTexture[20].loadFromRenderedText("Click block: "+to_string(cube.getGainPerHit()), textColor, gMediumFont);
     instructionTexture[20].render(SCREEN_WIDTH-instructionTexture[20].getWidth(), TILE_SIZE);
 
@@ -716,12 +738,22 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
             instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
                                            block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
         }
+        if (levelName=="Enigma" && (block.getType()=="1BG" || block.getType()=="1BO" || block.getType()=="1BI")) {
+            instructionTexture[40].loadFromRenderedText(to_string(block.counter), textColor, gMediumFont);
+            instructionTexture[40].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[40].getWidth())/2,
+                                          block.getHitbox().y+(block.getHitbox().h-instructionTexture[40].getHeight())/2);
+        }
+        if (levelName=="Enigma" && !uniqueDigits) {
+            instructionTexture[41].setTextOnce("Password should contain 4 different digits", textColor, gMediumFont);
+            instructionTexture[41].render((SCREEN_WIDTH-instructionTexture[41].getWidth())/2, SCREEN_HEIGHT/2);
+        }
     }
 }
 
-const int ALL_LEVELS=6;
-string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error"};
-static int levelIndex=1;
+const int ALL_LEVELS=9;
+string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error",
+                              "Labyrinth", "Enigma", "Cookies"};
+static int levelIndex=7;
 
 int main(int argc, char *argv[]) {
     if (!init()) {
@@ -805,7 +837,37 @@ int main(int argc, char *argv[]) {
                         cube.handleEvent(e);
                     }
                 }
+                // Render level
+                scrollingOffset+=60*deltaTime;
+                if (scrollingOffset>SCREEN_HEIGHT) {
+                    scrollingOffset=0;
+                }
 
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                SDL_RenderClear(gRenderer);
+
+                SDL_Color currentBGColor=bgColor[selectedColor];
+                backgroundTexture[selectedBG].setColor(currentBGColor);
+                SDL_FRect backgroundRect={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                if (selectedBG==STRIPE) {
+                    for (int i=0; i<2; i++) {
+                        backgroundRect.y=backgroundRect.h*i-scrollingOffset;
+                        backgroundTexture[selectedBG].render(backgroundRect);
+                    }
+                }
+                else if (selectedBG==TETRIS) {
+                    for (int i=0; i<2; i++) {
+                        backgroundRect.y=-backgroundRect.h*i+scrollingOffset;
+                        backgroundTexture[selectedBG].render(backgroundRect);
+                    }
+                }
+                else if (selectedBG==BLANK) {
+                    backgroundTexture[selectedBG].render(backgroundRect);
+                }
+
+                renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
+                cube.render();
+                displayTextInLevel(cube, blocks, currentStatus, currentSetting, levelName[levelIndex]);
                 if (currentStatus==START) {
                     loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
                     cube.reset();
@@ -816,7 +878,7 @@ int main(int argc, char *argv[]) {
                 // Playing
                 if (currentStatus==PLAYING) {
                     // Handle player interactions
-                    cube.move(blocks, jumpOrbs, currentStatus, deltaTime);
+                    cube.move(blocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
                     cube.interact(blocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
                     if (dead) {
                         levelIndex++;
@@ -854,37 +916,7 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
 
-                // Render level
-                scrollingOffset+=60*deltaTime;
-                if (scrollingOffset>SCREEN_HEIGHT) {
-                    scrollingOffset=0;
-                }
 
-                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-                SDL_RenderClear(gRenderer);
-
-                SDL_Color currentBGColor=bgColor[selectedColor];
-                backgroundTexture[selectedBG].setColor(currentBGColor);
-                SDL_FRect backgroundRect={0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-                if (selectedBG==STRIPE) {
-                    for (int i=0; i<2; i++) {
-                        backgroundRect.y=backgroundRect.h*i-scrollingOffset;
-                        backgroundTexture[selectedBG].render(backgroundRect);
-                    }
-                }
-                else if (selectedBG==TETRIS) {
-                    for (int i=0; i<2; i++) {
-                        backgroundRect.y=-backgroundRect.h*i+scrollingOffset;
-                        backgroundTexture[selectedBG].render(backgroundRect);
-                    }
-                }
-                else if (selectedBG==BLANK) {
-                    backgroundTexture[selectedBG].render(backgroundRect);
-                }
-
-                renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
-                cube.render();
-                displayTextInLevel(cube, blocks, currentStatus, currentSetting);
 
                 // Settings screen
                 if (currentStatus==SETTINGS) {

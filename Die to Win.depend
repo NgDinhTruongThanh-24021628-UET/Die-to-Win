@@ -1,10 +1,12 @@
 # depslib dependency file v1.0
-1745337140 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745507503 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
 	<vector>
 	<unordered_map>
+	<cstdlib>
+	<ctime>
 	<SDL.h>
 	<SDL_image.h>
 	<SDL_ttf.h>
@@ -14,13 +16,13 @@
 	"LevelObjs.h"
 	"Enums.h"
 
-1745336688 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745502026 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 	"Enums.h"
 
-1745335283 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745504291 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<cmath>
@@ -45,7 +47,7 @@
 
 1742297023 c:\users\truong thanh\documents\sdl projects\die to win\globals.h
 
-1744977552 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
+1745507186 source:c:\users\truong thanh\documents\sdl projects\die to win\texture.cpp
 	<iostream>
 	<string>
 	<SDL.h>
@@ -53,7 +55,7 @@
 	<SDL_ttf.h>
 	"Texture.h"
 
-1744949169 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
+1745507186 c:\users\truong thanh\documents\sdl projects\die to win\texture.h
 	<string>
 	<SDL.h>
 	<SDL_ttf.h>
@@ -68,16 +70,17 @@
 	<iostream>
 	<SDL.h>
 
-1745121495 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745507789 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 	"Enums.h"
 
-1745121479 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745508093 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<string>
 	<vector>
+	<cmath>
 	<SDL.h>
 	<SDL_ttf.h>
 	<SDL_image.h>
@@ -85,6 +88,9 @@
 	"LevelObjs.h"
 	"Player.h"
 	"Enums.h"
+	<algorithm>
+	<random>
+	<ctime>
 
 1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
 
