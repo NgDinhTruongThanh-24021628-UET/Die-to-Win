@@ -65,6 +65,13 @@ bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor, TTF
     return mTexture!=nullptr;
 }
 
+// Update text texture if detected new text
+bool LTexture::setTextOnce(std::string newText, SDL_Color textColor, TTF_Font *font) {
+    if (newText==lastRenderedText) return true;
+    lastRenderedText=newText;
+    return loadFromRenderedText(newText, textColor, font);
+}
+
 // Destroy texture
 void LTexture::free() {
     if (mTexture!=nullptr) {

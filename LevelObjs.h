@@ -7,6 +7,11 @@
 
 extern const int TILE_SIZE;
 
+class Block;
+class Spike;
+class JumpOrb;
+class JumpPad;
+
 class Block {
 public:
     Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type);
@@ -20,21 +25,26 @@ public:
 
     const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
-    void changePosition(float x, float y);
+    void movingBlock(double deltaTime);
 
     bool isInteractable() const;
-    void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus, std::vector<Block> &blocks);
+    void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
+                  std::vector<Block> &blocks, std::vector<Spike> &spikes, const std::string &levelName, double deltaTime);
 
     double angle;
     SDL_RendererFlip mirror;
 
+    bool unlocked=false;
+    float realX, realY;
+    float speed=300.0f;
+
     int counter=0;
     int value=5;
+    int increment=5;
 
 private:
     SDL_FRect hitbox;
     std::string blockType;
-    int increment=5;
 };
 
 class Spike {
@@ -45,9 +55,14 @@ public:
 
     const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
+    void movingSpike(double deltaTime);
 
     double angle;
     SDL_RendererFlip mirror;
+
+    bool unlocked=false;
+    float realX, realY;
+    float speed=300.0f;
 
 private:
     SDL_FRect hitbox;
