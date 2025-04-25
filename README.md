@@ -3,10 +3,14 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+- Added 1 new level
+  
+Level "Cookies" showcase: https://github.com/user-attachments/assets/c57b1da4-bb60-4aec-9b76-770b2d3a134c
+
 ### v0.2
 - Added 2 new levels
 
-A short video of the level "Enigma": https://github.com/user-attachments/assets/c228f521-228a-43c4-ac02-30e5812af69e
+Level "Enigma" showcase: https://github.com/user-attachments/assets/c228f521-228a-43c4-ac02-30e5812af69e
 
 ### v0.1
 The first 5 levels of Die to Win are here! Enjoy!
