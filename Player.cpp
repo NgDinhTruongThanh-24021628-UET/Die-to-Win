@@ -258,6 +258,7 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
         float closestPosY=0;
 
         for (auto &block : blocks) {
+            if (block.getType()=="1J") continue;
             SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
@@ -291,6 +292,7 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
         float closestPosY=SCREEN_HEIGHT;
 
         for (auto &block : blocks) {
+            if (block.getType()=="1J") continue;
             SDL_FRect blockHitbox=block.getHitbox();
             if (blockHitbox.x<normalHitbox.x+normalHitbox.w &&
                 blockHitbox.x+blockHitbox.w>normalHitbox.x && // If player hitbox inside platform
@@ -323,10 +325,20 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
 void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
                       std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &dead) {
 
+    // Idle tycoon
     income+=passiveIncome*deltaTime;
     if (income>=passiveIncome) {
         totalMoney+=passiveIncome;
         income=0;
+    }
+    if (totalMoney>100000000) {
+        for (auto &spike : spikes) {
+            if (!spike.unlocked) {
+                spike.unlocked=true;
+                spike.realX=SCREEN_WIDTH-TILE_SIZE*8-TILE_SIZE*7/18.0f+TILE_SIZE*2/5.0f;
+                spike.realY=SCREEN_HEIGHT-TILE_SIZE*3-TILE_SIZE/2.0f+TILE_SIZE*3/10.0f;
+            }
+        }
     }
 
     // Orb interactions
@@ -396,6 +408,10 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
         if (spike.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             dead=true;
         }
+    }
+
+    for (auto &block : blocks) {
+        block.movingBlock(deltaTime);
     }
 }
 

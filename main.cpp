@@ -595,6 +595,10 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
     file.close();
 }
 
+void offsetObjects(vector<Block> &blocks, const string &levelName) {
+
+}
+
 void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
                  const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double deltaTime) {
     // Render orbs
@@ -646,26 +650,6 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
         }
     }
 
-    // Render platforms (blocks)
-    for (const auto& block : blocks) {
-        string type=block.getType();
-        if (blockLookup.find(type)!=blockLookup.end()) {
-            BlockInfo info=blockLookup[type];
-            SDL_FRect renderBlock=block.getHitbox();
-            blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
-            if (type=="1BG") {
-                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 160);
-                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
-            }
-            if (type=="1BO") {
-                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(gRenderer, 255, 102, 0, 160);
-                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
-            }
-        }
-    }
-
     // Render spikes
     for (const auto& spike : spikes) {
         string type=spike.getType();
@@ -697,18 +681,62 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
             blockSheetTexture.render(renderSpike, &spikeClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
         }
     }
+
+    // Render platforms (blocks)
+    for (const auto& block : blocks) {
+        string type=block.getType();
+        if (blockLookup.find(type)!=blockLookup.end()) {
+            BlockInfo info=blockLookup[type];
+            SDL_FRect renderBlock=block.getHitbox();
+            blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
+            if (type=="1BG") {
+                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 160);
+                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
+            }
+            if (type=="1BO") {
+                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(gRenderer, 255, 102, 0, 160);
+                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
+            }
+        }
+    }
 }
 
 bool uniqueDigits=true;
 void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting, const string &levelName) {
-    /*instructionTexture[20].loadFromRenderedText("Click block: "+to_string(cube.getGainPerHit()), textColor, gMediumFont);
-    instructionTexture[20].render(SCREEN_WIDTH-instructionTexture[20].getWidth(), TILE_SIZE);
+    if (currentStatus==PLAYING && levelName=="Cookies") {
+        vector<Block*> textPlat;
+        for (Block &block : blocks) {
+            if (block.getType()=="1IP") {
+                instructionTexture[20].setTextOnce(to_string(cube.getGainPerHit()), textColor, gSmallFont);
+                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
+            }
+            if (block.getType()=="1I2") {
+                instructionTexture[20].setTextOnce((block.counter<5 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
+                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
+            }
+            if (block.getType()=="1I3" || block.getType()=="1I4") {
+                instructionTexture[20].setTextOnce((block.counter<25 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
+                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
+            }
+            if (block.getType()=="1PL") {
+                textPlat.push_back(&block);
+            }
+        }
+        instructionTexture[21].loadFromRenderedText(to_string(cube.getTotalMoney()), textColor, gMediumFont);
+        instructionTexture[21].render(textPlat[0]->getHitbox().x+(TILE_SIZE*5-instructionTexture[21].getWidth())/2,
+                                      textPlat[0]->getHitbox().y+(TILE_SIZE-instructionTexture[21].getHeight())/2);
 
-    instructionTexture[21].loadFromRenderedText("Passive income: "+to_string(cube.getPassiveIncome()), textColor, gMediumFont);
-    instructionTexture[21].render(SCREEN_WIDTH-instructionTexture[21].getWidth(), 2*TILE_SIZE);
+        instructionTexture[22].setTextOnce(to_string(cube.getPassiveIncome())+" /sec", textColor, gMediumFont);
+        instructionTexture[22].render(textPlat[1]->getHitbox().x+(TILE_SIZE*5-instructionTexture[22].getWidth())/2,
+                                      textPlat[1]->getHitbox().y+(TILE_SIZE-instructionTexture[22].getHeight())/2);
 
-    instructionTexture[22].loadFromRenderedText("Total money: "+to_string(cube.getTotalMoney()), textColor, gMediumFont);
-    instructionTexture[22].render(SCREEN_WIDTH-instructionTexture[22].getWidth(), 3*TILE_SIZE);*/
+        textPlat.clear();
+    }
 
     for (const Block &block : blocks) {
         if (block.getType()=="1I1" || block.getType()=="1I2" || block.getType()=="1I3" || block.getType()=="1I4") {
@@ -750,10 +778,10 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
     }
 }
 
-const int ALL_LEVELS=9;
+const int ALL_LEVELS=10;
 string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error",
-                              "Labyrinth", "Enigma", "Cookies"};
-static int levelIndex=7;
+                              "Labyrinth", "Enigma", "Cookies", "Tic Tac Toe"};
+static int levelIndex=9;
 
 int main(int argc, char *argv[]) {
     if (!init()) {
@@ -833,7 +861,7 @@ int main(int argc, char *argv[]) {
                             quit=true;
                         }
                     }
-                    else if (currentStatus==PLAYING) {
+                    else if (currentStatus==PLAYING || currentStatus==MENU) {
                         cube.handleEvent(e);
                     }
                 }
@@ -868,8 +896,10 @@ int main(int argc, char *argv[]) {
                 renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
                 cube.render();
                 displayTextInLevel(cube, blocks, currentStatus, currentSetting, levelName[levelIndex]);
+
                 if (currentStatus==START) {
                     loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
+                    offsetObjects(blocks, levelName[levelIndex]);
                     cube.reset();
                     fadeAlpha=0;
                     currentStatus=PLAYING;
@@ -896,7 +926,7 @@ int main(int argc, char *argv[]) {
                 // Menu screen
                 if (currentStatus==MENU) {
                     loadLevel("Resources/Levels/Menu.txt", blocks, spikes, jumpOrbs, jumpPads);
-                    currentStatus=PLAYING;
+                    cube.move(blocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
                 }
 
                 // Test level

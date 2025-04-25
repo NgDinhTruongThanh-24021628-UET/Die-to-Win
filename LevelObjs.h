@@ -26,10 +26,15 @@ public:
     const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
     void movingBlock(double deltaTime);
+    void offsetPosition(float offsetX, float offsetY);
 
     bool isInteractable() const;
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                   std::vector<Block> &blocks, std::vector<Spike> &spikes, const std::string &levelName, double deltaTime);
+    void interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
+                         std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
+    void interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
+    void interactTicTacToe();
 
     double angle;
     SDL_RendererFlip mirror;
