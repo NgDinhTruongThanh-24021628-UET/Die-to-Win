@@ -212,7 +212,8 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
                                   onPlatform, hitCeiling, reverseGravity)) {
             mVelY=0.0;
             if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
-                                                  blocks, pushableBlocks, spikes, levelName, deltaTime);
+                                                  blocks, pushableBlocks, spikes, levelName, deltaTime,
+                                                  timeStopped, timeStopTimer);
         }
     }
     forcePushIntoGap(blocks);
@@ -335,7 +336,7 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
 }
 
 // Jump orb and jump pad interactions
-void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
+void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
                       std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &dead) {
 
     // Idle tycoon
@@ -344,12 +345,34 @@ void Player::interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
         totalMoney+=passiveIncome;
         income=0;
     }
-    if (totalMoney>100000000) {
+    if (totalMoney>10000000) {
         for (auto &spike : spikes) {
             if (!spike.unlocked) {
                 spike.unlocked=true;
                 spike.realX=SCREEN_WIDTH-TILE_SIZE*8-TILE_SIZE*7/18.0f+TILE_SIZE*2/5.0f;
                 spike.realY=SCREEN_HEIGHT-TILE_SIZE*3-TILE_SIZE/2.0f+TILE_SIZE*3/10.0f;
+            }
+        }
+    }
+
+    // Time stop
+    if (timeStopped) {
+        SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 80);
+        SDL_Rect timeStopOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
+        SDL_RenderFillRect(gRenderer, &timeStopOverlay);
+
+        timeStopTimer-=deltaTime;
+        if (timeStopTimer<0) {
+            timeStopped=false;
+            timeStopTimer=0;
+        }
+    }
+    if (!timeStopped) {
+        for (auto &block : pushableBlocks) {
+            if (block.resetQueued) {
+                block.resetQueued=false;
+                block.resetPosition();
             }
         }
     }
