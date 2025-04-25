@@ -3,6 +3,11 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+### v0.4
+- Added 1 new level
+- Added game theme song and death SFX
+
+### v0.3
 - Added 1 new level
   
 Level "Cookies" showcase: https://github.com/user-attachments/assets/c57b1da4-bb60-4aec-9b76-770b2d3a134c

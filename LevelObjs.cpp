@@ -137,14 +137,16 @@ void Block::offsetPosition(float offsetX, float offsetY) {
 }
 
 bool Block::isInteractable() const {
-    string type[10]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C", "1BI", "1IN"};
-    for (int i=0; i<10; i++) {
+    string type[12]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C", "1BI", "1IN",
+                     "1R", "1SA"};
+    for (int i=0; i<12; i++) {
         if (blockType==type[i]) return true;
     }
     return false;
 }
 void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
-                     vector<Block> &blocks, vector<Spike> &spikes, const string &levelName, double deltaTime) {
+                     vector<Block> &blocks, vector<PushableBlock> &pushableBlocks, vector<Spike> &spikes,
+                     const string &levelName, double deltaTime) {
     if (!isInteractable()) return;
     if (blockType=="1S") {
         currentStatus=SETTINGS;
@@ -155,14 +157,14 @@ void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passi
     else if (blockType=="1C") {
         currentStatus=CREDITS;
     }
-    if (levelName=="Cookies") {
+    else if (levelName=="Cookies") {
         interactClicker(totalMoney, gainPerHit, passiveIncome, blocks, spikes, deltaTime);
     }
     else if (levelName=="Enigma") {
         interactEnigma(blocks, spikes, deltaTime);
     }
-    else if (levelName=="Tic Tac Toe"){
-
+    else if (levelName=="Move to Die" || levelName=="Illusion World") {
+        interactMoveToDie(blocks, pushableBlocks);
     }
 }
 
@@ -296,7 +298,150 @@ void Block::interactEnigma(vector<Block> &blocks, vector<Spike> &spikes, double 
     }
 }
 
+void Block::interactMoveToDie(vector<Block> &blocks, vector<PushableBlock> &pushableBlocks) {
+    if (blockType=="1R") {
+        for (auto &block : pushableBlocks) {
+            block.resetPosition();
+        }
+    }
+    else if (blockType=="1SA") {
+
+    }
+}
+
 // Block functions end
+
+// Pushable block functions start
+
+PushableBlock::PushableBlock(float x, float y, float w, float h) {
+    hitbox={x, y, w, h};
+    originalX=x;
+    originalY=y;
+}
+
+void PushableBlock::update(vector<Block> &platformBlocks, const SDL_FRect &playerHitbox,
+                           bool moveLeft, bool moveRight, bool &dead, double deltaTime) {
+
+    checkPush(platformBlocks, playerHitbox, moveLeft, moveRight, deltaTime);
+    applyPhysics(platformBlocks, deltaTime);
+    checkKill(playerHitbox, dead);
+}
+
+void PushableBlock::applyPhysics(vector<Block> &platformBlocks, double deltaTime) {
+    velY+=GRAVITY*deltaTime;
+    if (velY>TERMINAL_VELOCITY) velY=TERMINAL_VELOCITY;
+
+    SDL_FRect nextPos=hitbox;
+    nextPos.y+=velY*deltaTime;
+    grounded=false;
+
+    for (const auto &block : platformBlocks) {
+        if (block.getType()!="1J" && block.getType()!="1JL" && block.getType()!="1JR") { // Ignore jump-through platforms
+            SDL_FRect b=block.getHitbox();
+            if (hitbox.y+hitbox.h<=b.y &&
+                nextPos.y+hitbox.h>=b.y &&
+                hitbox.x+hitbox.w>b.x &&
+                hitbox.x<b.x+b.w) {
+
+                nextPos.y=b.y-hitbox.h;
+                velY=0.0;
+                grounded=true;
+                break;
+            }
+        }
+    }
+
+    hitbox.y=nextPos.y;
+}
+
+bool PushableBlock::checkYCollision(double playerX, double &playerY, double &nextPlayerY,
+                                    double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT, bool &onPlatform) {
+    bool collided=false;
+
+    // Y-axis downward movement
+    if (playerY+PLAYER_HEIGHT<=hitbox.y &&
+        nextPlayerY+PLAYER_HEIGHT>=hitbox.y && // If player will go through platform
+        playerX+PLAYER_WIDTH>hitbox.x &&
+        playerX<hitbox.x+hitbox.w) { // And will collide with platform
+
+        nextPlayerY=hitbox.y-PLAYER_HEIGHT;
+        collided=true;
+        onPlatform=true;
+    }
+
+    // Y-axis upward movement
+    if (playerY>=hitbox.y+hitbox.h &&
+        nextPlayerY<=hitbox.y+hitbox.h && // If player will go through platform
+        playerX+PLAYER_WIDTH>hitbox.x &&
+        playerX<hitbox.x+hitbox.w) { // And will collide with platform
+
+        nextPlayerY=hitbox.y+hitbox.h;
+        collided=true;
+        onPlatform=true;
+    }
+
+    return collided;
+}
+
+void PushableBlock::checkPush(vector<Block> &platformBlocks, const SDL_FRect &playerHitbox, bool moveLeft, bool moveRight, double deltaTime) {
+    touchingLeft=(playerHitbox.x+playerHitbox.w>hitbox.x &&
+                  playerHitbox.x<hitbox.x &&
+                  playerHitbox.y+playerHitbox.h>hitbox.y &&
+                  playerHitbox.y<hitbox.y+hitbox.h);
+
+    touchingRight=(playerHitbox.x<hitbox.x+hitbox.w &&
+                   playerHitbox.x+playerHitbox.w>hitbox.x+hitbox.w &&
+                   playerHitbox.y+playerHitbox.h>hitbox.y &&
+                   playerHitbox.y<hitbox.y+hitbox.h);
+
+    float moveStep=0.0;
+    if (touchingLeft && moveRight) {
+        moveStep=PUSH_SPEED*deltaTime;
+    }
+    else if (touchingRight && moveLeft) {
+        moveStep=-PUSH_SPEED*deltaTime;
+    }
+
+    SDL_FRect nextPos=hitbox;
+    nextPos.x+=moveStep;
+
+    for (const auto &block : platformBlocks) {
+        if (block.getType()!="1J" && block.getType()!="1JL" && block.getType()!="1JR") { // Ignore jump-through platforms
+            SDL_FRect b=block.getHitbox();
+            if (hitbox.x+hitbox.w<=b.x &&
+                nextPos.x+hitbox.w>=b.x &&
+                hitbox.y+hitbox.h>b.y &&
+                hitbox.y<b.y+b.h) {
+
+                nextPos.x=b.x-hitbox.w;
+            }
+            if (hitbox.x>=b.x+b.w &&
+                nextPos.x<=b.x+b.w &&
+                hitbox.y+hitbox.h>b.y &&
+                hitbox.y<b.y+b.h) {
+
+                nextPos.x=b.x+b.w;
+            }
+        }
+    }
+
+    hitbox.x=nextPos.x;
+}
+
+void PushableBlock::checkKill(const SDL_FRect &playerHitbox, bool &dead) {
+    if (velY>1000.0 && SDL_HasIntersectionF(&hitbox, &playerHitbox)) {
+        dead=true;
+    }
+}
+
+void PushableBlock::resetPosition() {
+    hitbox.x=originalX;
+    hitbox.y=originalY;
+}
+
+SDL_FRect PushableBlock::getHitbox() const {
+    return hitbox;
+}
 
 // Spike functions start
 

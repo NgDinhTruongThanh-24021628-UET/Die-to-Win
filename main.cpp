@@ -64,6 +64,10 @@ SDL_Rect spikeClips[NUMBER_OF_SPIKES];
 SDL_Rect orbClips[NUMBER_OF_ORBS];
 SDL_Rect padClips[NUMBER_OF_PADS];
 
+// Music + SFX
+Mix_Music *gameThemeSong=nullptr;
+Mix_Chunk *deathSound=nullptr;
+
 // Initialize
 bool init() {
     bool success=true;
@@ -109,6 +113,11 @@ bool init() {
                 // Initialize SDL_ttf.h
                 if (TTF_Init()==-1) {
                     cout << "SDL_ttf could not initialize. " << TTF_GetError() << endl;
+                    success=false;
+                }
+
+                if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096)<0) {
+                    cout << "SDL_mixer could not initialize. " << Mix_GetError() << endl;
                     success=false;
                 }
             }
@@ -276,11 +285,27 @@ bool loadMedia() {
         success=false;
     }
 
+    gameThemeSong=Mix_LoadMUS("Resources/Game Theme.ogg");
+    if (gameThemeSong==nullptr) {
+        cout << "Failed to load game theme song. " << Mix_GetError() << endl;
+        success=false;
+    }
+    deathSound=Mix_LoadWAV("Resources/Death Sound.mp3");
+    if (deathSound==nullptr) {
+        cout << "Failed to load death sound effect. " << Mix_GetError() << endl;
+        success=false;
+    }
     return success;
 }
 
 // Cleanup
 void close() {
+    // Deal with music + SFX
+    Mix_FreeMusic(gameThemeSong);
+    gameThemeSong=nullptr;
+    Mix_FreeChunk(deathSound);
+    deathSound=nullptr;
+
     // Deal with textures
     blockSheetTexture.free();
     orbPadSheetTexture.free();
@@ -330,6 +355,7 @@ vector<Block> blocks;
 vector<Spike> spikes;
 vector<JumpOrb> jumpOrbs;
 vector<JumpPad> jumpPads;
+vector<PushableBlock> pushableBlocks;
 
 // Identify block type
 struct BlockInfo {
@@ -375,7 +401,7 @@ unordered_map<string, BlockInfo> blockLookup={
     {"1IN", {14, 0, SDL_FLIP_NONE}},    // Password puzzle - check solution
     {"1BB", {15, 0, SDL_FLIP_NONE}},    // Pool puzzle - add water
     {"1SA", {16, 0, SDL_FLIP_NONE}},    // Time puzzle - stop time
-    {"1MV", {17, 0, SDL_FLIP_NONE}},    // Movable block
+    {"1MV", {17, 0, SDL_FLIP_NONE}},    // Pushable block
 
     {"1XM", {18, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - move X to next position
     {"1XI", {19, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - X block (interactable)
@@ -503,14 +529,15 @@ unordered_map<string, JumpPadInfo> jumpPadLookup={
 };
 
 // Load level from a file
-void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes, vector<JumpOrb> &jumpOrbs, vector<JumpPad> &jumpPads) {
+void loadLevel(const string &path, vector<Block> &blocks, vector<PushableBlock> &pushableBlocks,
+               vector<Spike> &spikes, vector<JumpOrb> &jumpOrbs, vector<JumpPad> &jumpPads) {
     ifstream file(path);
     if (!file.is_open()) {
         cout << "Failed to open level file." << endl;
         return;
     }
 
-    blocks.clear(); spikes.clear(); jumpOrbs.clear(); jumpPads.clear();
+    blocks.clear(); pushableBlocks.clear(); spikes.clear(); jumpOrbs.clear(); jumpPads.clear();
 
     // Read file and store objects
     string tile;
@@ -525,7 +552,8 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
             // Store blocks
             if (blockLookup.find(tile)!=blockLookup.end()) {
                 BlockInfo info=blockLookup[tile];
-                blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE, info.rotation, info.mirrored, tile);
+                if (tile!="1MV") blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE, info.rotation, info.mirrored, tile);
+                else pushableBlocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE);
             }
 
             // Store spikes
@@ -595,11 +623,7 @@ void loadLevel(const string &path, vector<Block> &blocks, vector<Spike> &spikes,
     file.close();
 }
 
-void offsetObjects(vector<Block> &blocks, const string &levelName) {
-
-}
-
-void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
+void renderLevel(const vector<Block> &blocks, const vector<PushableBlock> &pushableBlocks, const vector<Spike> &spikes,
                  const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double deltaTime) {
     // Render orbs
     for (const auto &orb : jumpOrbs) {
@@ -651,7 +675,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
     }
 
     // Render spikes
-    for (const auto& spike : spikes) {
+    for (const auto &spike : spikes) {
         string type=spike.getType();
         if (spikeLookup.find(type)!=spikeLookup.end()) {
             SpikeInfo info=spikeLookup[type];
@@ -683,7 +707,7 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
     }
 
     // Render platforms (blocks)
-    for (const auto& block : blocks) {
+    for (const auto &block : blocks) {
         string type=block.getType();
         if (blockLookup.find(type)!=blockLookup.end()) {
             BlockInfo info=blockLookup[type];
@@ -701,10 +725,15 @@ void renderLevel(const vector<Block> &blocks, const vector<Spike> &spikes,
             }
         }
     }
+
+    for (const auto &block : pushableBlocks) {
+        SDL_FRect renderBlock=block.getHitbox();
+        blockSheetTexture.render(renderBlock, &blockClips[17], 0, nullptr, SDL_FLIP_NONE);
+    }
 }
 
 bool uniqueDigits=true;
-void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting, const string &levelName) {
+void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting, const string &levelName, const int &levelIndex) {
     if (currentStatus==PLAYING && levelName=="Cookies") {
         vector<Block*> textPlat;
         for (Block &block : blocks) {
@@ -739,6 +768,12 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
     }
 
     for (const Block &block : blocks) {
+        if (currentStatus==PLAYING) {
+            instructionTexture[15].setTextOnce("Level "+to_string(levelIndex), textColor, gTinyFont);
+            instructionTexture[15].render(4, -4);
+            instructionTexture[16].setTextOnce(levelName, textColor, gTinyFont);
+            instructionTexture[16].render(SCREEN_WIDTH-instructionTexture[16].getWidth()-4, -4);
+        }
         if (block.getType()=="1I1" || block.getType()=="1I2" || block.getType()=="1I3" || block.getType()=="1I4") {
             instructionTexture[25].loadFromRenderedText(to_string(block.counter), textColor, gTinyFont);
             instructionTexture[25].render(block.getHitbox().x+TILE_SIZE/12, block.getHitbox().y);
@@ -778,10 +813,10 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
     }
 }
 
-const int ALL_LEVELS=10;
+const int ALL_LEVELS=11;
 string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error",
-                              "Labyrinth", "Enigma", "Cookies", "Tic Tac Toe"};
-static int levelIndex=9;
+                              "Labyrinth", "Enigma", "Cookies", "Move to Die", "Illusion World"};
+static int levelIndex=1;
 
 int main(int argc, char *argv[]) {
     if (!init()) {
@@ -893,14 +928,14 @@ int main(int argc, char *argv[]) {
                     backgroundTexture[selectedBG].render(backgroundRect);
                 }
 
-                renderLevel(blocks, spikes, jumpOrbs, jumpPads, deltaTime);
+                renderLevel(blocks, pushableBlocks, spikes, jumpOrbs, jumpPads, deltaTime);
                 cube.render();
-                displayTextInLevel(cube, blocks, currentStatus, currentSetting, levelName[levelIndex]);
+                displayTextInLevel(cube, blocks, currentStatus, currentSetting, levelName[levelIndex], levelIndex);
 
                 if (currentStatus==START) {
-                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
-                    offsetObjects(blocks, levelName[levelIndex]);
+                    Mix_PlayMusic(gameThemeSong, -1);
                     cube.reset();
+                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
                     fadeAlpha=0;
                     currentStatus=PLAYING;
                 }
@@ -908,14 +943,18 @@ int main(int argc, char *argv[]) {
                 // Playing
                 if (currentStatus==PLAYING) {
                     // Handle player interactions
-                    cube.move(blocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
+                    cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
                     cube.interact(blocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
+                    for (auto &block : pushableBlocks) {
+                        block.update(blocks, cube.getHitbox(), cube.moveLeft, cube.moveRight, dead, deltaTime);
+                    }
                     if (dead) {
+                        Mix_PlayChannel(-1, deathSound, 0);
                         levelIndex++;
                         if (levelIndex<ALL_LEVELS) {
                             dead=false;
                             currentStatus=START;
-                            //SDL_Delay(200);
+                            SDL_Delay(1000);
                         }
                         else {
                             currentStatus=WIN;
@@ -925,13 +964,14 @@ int main(int argc, char *argv[]) {
 
                 // Menu screen
                 if (currentStatus==MENU) {
-                    loadLevel("Resources/Levels/Menu.txt", blocks, spikes, jumpOrbs, jumpPads);
-                    cube.move(blocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
+                    loadLevel("Resources/Levels/Menu.txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
+                    if (!Mix_PlayingMusic()) Mix_PlayMusic(gameThemeSong, -1);
+                    cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
                 }
 
                 // Test level
                 if (currentStatus==TEST) {
-                    loadLevel("Resources/Levels/test.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/test.txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
                     currentStatus=PLAYING;
                 }
 
@@ -941,7 +981,7 @@ int main(int argc, char *argv[]) {
                     fadeAlpha=0;
                     cube.reset();
                     levelIndex=1;
-                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
                     currentStatus=PLAYING;
                     continue;
                 }
@@ -951,7 +991,7 @@ int main(int argc, char *argv[]) {
                 // Settings screen
                 if (currentStatus==SETTINGS) {
                     cube.resetBool();
-                    loadLevel("Resources/Levels/Settings.txt", blocks, spikes, jumpOrbs, jumpPads);
+                    loadLevel("Resources/Levels/Settings.txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
 
                     float textPosY=TILE_SIZE*9/18;
                     fadeAlpha=200;

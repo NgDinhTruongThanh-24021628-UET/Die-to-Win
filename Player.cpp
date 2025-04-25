@@ -158,7 +158,7 @@ void Player::forcePushIntoGap(std::vector<Block> &blocks) {
 }
 
 // Move player, platform physics included, deltaTime for consistent physics
-void Player::move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime) {
+void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime) {
 
     // Horizontal movement
     if (moveLeft && !moveRight) {
@@ -177,6 +177,14 @@ void Player::move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::v
     for (const auto &block : blocks) {
         if (block.checkXCollision(mPosX, mPosY, nextPosX, mVelX, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             mVelX=0.0;
+        }
+    }
+    for (auto &block : pushableBlocks) {
+        if (block.touchingLeft) {
+            nextPosX=block.getHitbox().x-PLAYER_WIDTH;
+        }
+        else if (block.touchingRight) {
+            nextPosX=block.getHitbox().x+block.getHitbox().w;
         }
     }
 
@@ -204,10 +212,15 @@ void Player::move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::v
                                   onPlatform, hitCeiling, reverseGravity)) {
             mVelY=0.0;
             if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
-                                                  blocks, spikes, levelName, deltaTime);
+                                                  blocks, pushableBlocks, spikes, levelName, deltaTime);
         }
     }
     forcePushIntoGap(blocks);
+    for (auto &block : pushableBlocks) {
+        if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT, onPlatform)) {
+            mVelY=0.0;
+        }
+    }
 
     // Calculate coyote time
     if (onPlatform) {
