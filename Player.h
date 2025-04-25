@@ -43,7 +43,7 @@ public:
     void forcePushIntoGap(std::vector<Block> &blocks);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<Block> &blocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime);
+    void move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime);
 
     // Helper function for spider pad interactions
     void findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::vector<Spike> &spikes);
@@ -68,8 +68,10 @@ public:
     unsigned long long getTotalMoney();
     int getGainPerHit();
     int getPassiveIncome();
-
     double income;
+
+    // Check if player is moving left or right
+    bool moveLeft, moveRight;
 
 private:
     // Player X/Y positions
@@ -80,9 +82,6 @@ private:
 
     // Check if key is being held, only allow jump once
     bool isJumpHeld, canJump;
-
-    // Check if player is moving left or right
-    bool moveLeft, moveRight;
 
     // Check if player is on a platform or hitting the ceiling
     bool onPlatform, hitCeiling;
