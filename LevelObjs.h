@@ -33,12 +33,12 @@ public:
     bool isInteractable() const;
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                   std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                  const std::string &levelName, double deltaTime);
+                  const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer);
 
     void interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
                          std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
     void interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
-    void interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks);
+    void interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer);
 
     double angle;
     SDL_RendererFlip mirror;
@@ -82,6 +82,7 @@ public:
     double PUSH_SPEED=300.0;
     bool grounded=false;
     bool touchingLeft, touchingRight;
+    bool resetQueued=false;
 
     float originalX, originalY;
 

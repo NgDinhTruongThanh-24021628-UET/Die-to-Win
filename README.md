@@ -3,6 +3,12 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+### v0.5
+- Added 1 new level
+- Added game credits
+  
+Level "Illusion World" showcase: https://github.com/user-attachments/assets/e3ef0cb3-086a-43ed-ac86-a20510ddfa5e
+
 ### v0.4
 - Added 1 new level
 - Added game theme song and death SFX

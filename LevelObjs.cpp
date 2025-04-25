@@ -146,7 +146,7 @@ bool Block::isInteractable() const {
 }
 void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                      vector<Block> &blocks, vector<PushableBlock> &pushableBlocks, vector<Spike> &spikes,
-                     const string &levelName, double deltaTime) {
+                     const string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer) {
     if (!isInteractable()) return;
     if (blockType=="1S") {
         currentStatus=SETTINGS;
@@ -164,11 +164,12 @@ void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passi
         interactEnigma(blocks, spikes, deltaTime);
     }
     else if (levelName=="Move to Die" || levelName=="Illusion World") {
-        interactMoveToDie(blocks, pushableBlocks);
+        interactMoveToDie(blocks, pushableBlocks, timeStopped, timeStopTimer);
     }
 }
 
-void Block::interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime) {
+void Block::interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
+                            std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime) {
     if (spikes.empty()) {
         int baseX, baseY;
         for (const auto &block : blocks) {
@@ -298,14 +299,22 @@ void Block::interactEnigma(vector<Block> &blocks, vector<Spike> &spikes, double 
     }
 }
 
-void Block::interactMoveToDie(vector<Block> &blocks, vector<PushableBlock> &pushableBlocks) {
+void Block::interactMoveToDie(vector<Block> &blocks, vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer) {
     if (blockType=="1R") {
         for (auto &block : pushableBlocks) {
-            block.resetPosition();
+            if (timeStopped) {
+                block.resetQueued=true;
+            }
+            else {
+                block.resetPosition();
+            }
         }
     }
     else if (blockType=="1SA") {
-
+        if (!timeStopped) {
+            timeStopped=true;
+            timeStopTimer=5;
+        }
     }
 }
 

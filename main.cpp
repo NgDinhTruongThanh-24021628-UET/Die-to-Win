@@ -733,7 +733,9 @@ void renderLevel(const vector<Block> &blocks, const vector<PushableBlock> &pusha
 }
 
 bool uniqueDigits=true;
-void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting, const string &levelName, const int &levelIndex) {
+void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting,
+                        const string &levelName, const int &levelIndex) {
+
     if (currentStatus==PLAYING && levelName=="Cookies") {
         vector<Block*> textPlat;
         for (Block &block : blocks) {
@@ -797,7 +799,7 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
             gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
         }
         if (block.getType()=="1K2") {
-            instructionTexture[30].loadFromRenderedText("v0.1 ", textColor, gSmallFont);
+            instructionTexture[30].loadFromRenderedText("v0.5 ", textColor, gSmallFont);
             instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
                                            block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
         }
@@ -810,6 +812,12 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
             instructionTexture[41].setTextOnce("Password should contain 4 different digits", textColor, gMediumFont);
             instructionTexture[41].render((SCREEN_WIDTH-instructionTexture[41].getWidth())/2, SCREEN_HEIGHT/2);
         }
+    }
+
+    if (levelName=="Illusion World" && cube.timeStopped) {
+        instructionTexture[45].loadFromRenderedText(to_string(int(cube.timeStopTimer)+1), textColor, gXtraFont);
+        instructionTexture[45].setAlpha(100);
+        instructionTexture[45].render((SCREEN_WIDTH-instructionTexture[45].getWidth())/2, (SCREEN_HEIGHT-instructionTexture[45].getHeight())/2);
     }
 }
 
@@ -888,6 +896,9 @@ int main(int argc, char *argv[]) {
                             break;
                         }
                     }
+                    else if (currentStatus==CREDITS && e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_RETURN) {
+                        currentStatus=MENU;
+                    }
                     else if (currentStatus==WIN && e.type==SDL_KEYDOWN) {
                         if (e.key.keysym.sym==SDLK_r) {
                             currentStatus=RESTART;
@@ -944,9 +955,9 @@ int main(int argc, char *argv[]) {
                 if (currentStatus==PLAYING) {
                     // Handle player interactions
                     cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
-                    cube.interact(blocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
+                    cube.interact(blocks, pushableBlocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
                     for (auto &block : pushableBlocks) {
-                        block.update(blocks, cube.getHitbox(), cube.moveLeft, cube.moveRight, dead, deltaTime);
+                        if (!cube.timeStopped) block.update(blocks, cube.getHitbox(), cube.moveLeft, cube.moveRight, dead, deltaTime);
                     }
                     if (dead) {
                         Mix_PlayChannel(-1, deathSound, 0);
@@ -979,6 +990,7 @@ int main(int argc, char *argv[]) {
                 if (currentStatus==RESTART) {
                     dead=false;
                     fadeAlpha=0;
+                    Mix_PlayMusic(gameThemeSong, -1);
                     cube.reset();
                     levelIndex=1;
                     loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
@@ -986,7 +998,34 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
 
+                // Credits
+                if (currentStatus==CREDITS) {
+                    cube.resetBool();
 
+                    float textPosY=TILE_SIZE*9/18;
+                    fadeAlpha=220;
+                    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, static_cast<Uint8>(fadeAlpha));
+                    SDL_FRect dimOverlay={TILE_SIZE*7/18, textPosY, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
+                    SDL_RenderFillRectF(gRenderer, &dimOverlay);
+
+                    instructionTexture[90].setTextOnce("Special thanks to", textColor, gLargeFont);
+                    instructionTexture[90].render((SCREEN_WIDTH-instructionTexture[90].getWidth())/2, textPosY);
+                    textPosY+=instructionTexture[90].getHeight();
+                    instructionTexture[91].setTextOnce("RobTop Games, creator of Geometry Dash", textColor, gMediumFont);
+                    instructionTexture[91].render((SCREEN_WIDTH-instructionTexture[91].getWidth())/2, textPosY);
+                    textPosY+=instructionTexture[91].getHeight();
+                    instructionTexture[92].setTextOnce("Lazy Foo Productions", textColor, gMediumFont);
+                    instructionTexture[92].render((SCREEN_WIDTH-instructionTexture[92].getWidth())/2, textPosY);
+                    textPosY+=instructionTexture[92].getHeight();
+                    instructionTexture[93].setTextOnce("GDColon.com", textColor, gMediumFont);
+                    instructionTexture[93].render((SCREEN_WIDTH-instructionTexture[93].getWidth())/2, textPosY);
+                    textPosY+=instructionTexture[93].getHeight();
+                    instructionTexture[94].setTextOnce("ChatGPT", textColor, gMediumFont);
+                    instructionTexture[94].render((SCREEN_WIDTH-instructionTexture[94].getWidth())/2, textPosY);
+                    textPosY+=instructionTexture[94].getHeight()+TILE_SIZE/2;
+                    instructionTexture[4].render((SCREEN_WIDTH-instructionTexture[4].getWidth())/2, textPosY);
+                }
 
                 // Settings screen
                 if (currentStatus==SETTINGS) {

@@ -43,13 +43,14 @@ public:
     void forcePushIntoGap(std::vector<Block> &blocks);
 
     // Move player, platform physics included, deltaTime for consistent physics
-    void move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime);
+    void move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
+              std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime);
 
     // Helper function for spider pad interactions
     void findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::vector<Spike> &spikes);
 
     // Jump orb and jump pad interactions
-    void interact(std::vector<Block> &blocks, std::vector<Spike> &spikes,
+    void interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
                   std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &quit);
 
     // Render player to window
@@ -72,6 +73,10 @@ public:
 
     // Check if player is moving left or right
     bool moveLeft, moveRight;
+
+    // Stop time (op ability wth)
+    bool timeStopped;
+    double timeStopTimer=0;
 
 private:
     // Player X/Y positions
