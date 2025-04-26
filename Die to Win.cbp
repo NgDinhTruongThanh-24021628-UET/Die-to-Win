@@ -48,8 +48,12 @@
 		<Unit filename="Enums.h" />
 		<Unit filename="LevelObjs.cpp" />
 		<Unit filename="LevelObjs.h" />
+		<Unit filename="LoadLevel.cpp" />
+		<Unit filename="LoadLevel.h" />
 		<Unit filename="Player.cpp" />
 		<Unit filename="Player.h" />
+		<Unit filename="Rendering.cpp" />
+		<Unit filename="Rendering.h" />
 		<Unit filename="Texture.cpp" />
 		<Unit filename="Texture.h" />
 		<Unit filename="main.cpp" />

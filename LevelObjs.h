@@ -5,7 +5,7 @@
 #include <vector>
 #include "Enums.h"
 
-extern const int TILE_SIZE;
+extern const float TILE_SIZE;
 
 class Block;
 class PushableBlock;

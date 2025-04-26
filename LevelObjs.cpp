@@ -12,7 +12,7 @@
 using namespace std;
 
 extern SDL_Renderer *gRenderer;
-extern LTexture instructionTexture[100];
+extern LTexture instructionTexture[];
 extern TTF_Font *gSmallFont;
 extern SDL_Color textColor;
 extern bool uniqueDigits;

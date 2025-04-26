@@ -1,12 +1,10 @@
 # depslib dependency file v1.0
-1745600552 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745686637 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
 	<vector>
 	<unordered_map>
-	<cstdlib>
-	<ctime>
 	<SDL.h>
 	<SDL_image.h>
 	<SDL_ttf.h>
@@ -15,14 +13,16 @@
 	"Texture.h"
 	"LevelObjs.h"
 	"Enums.h"
+	"LoadLevel.h"
+	"Rendering.h"
 
-1745597539 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745688379 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 	"Enums.h"
 
-1745599562 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745687827 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<cmath>
@@ -70,13 +70,13 @@
 	<iostream>
 	<SDL.h>
 
-1745597539 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745671953 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 	"Enums.h"
 
-1745597539 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745671033 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<string>
 	<vector>
@@ -95,4 +95,30 @@
 1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
 
 1745334592 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
+
+1745671895 c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.h
+	<string>
+	<vector>
+	<unordered_map>
+	"LevelObjs.h"
+
+1745679334 source:c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.cpp
+	<iostream>
+	<fstream>
+	<string>
+	<vector>
+	<unordered_map>
+	"LevelObjs.h"
+	"LoadLevel.h"
+
+1745679495 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
+	<string>
+	<vector>
+	<SDL.h>
+	"Texture.h"
+	"LevelObjs.h"
+	"LoadLevel.h"
+
+1745671953 c:\users\truong thanh\documents\sdl projects\die to win\rendering.h
+	<vector>
 

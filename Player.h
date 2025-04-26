@@ -7,7 +7,7 @@
 
 extern const int SCREEN_WIDTH;
 extern const int SCREEN_HEIGHT;
-extern const int TILE_SIZE;
+extern const float TILE_SIZE;
 
 class Player {
 public:
@@ -27,7 +27,7 @@ public:
     static constexpr double GRAVITY=6000.0;
 
     // Fall speed limit
-    static constexpr double TERMINAL_VELOCITY=5000.0;
+    static constexpr double TERMINAL_VELOCITY=6000.0;
 
     // Constructor
     Player();
@@ -93,6 +93,13 @@ private:
 
     // Check if gravity is reversed
     bool reverseGravity;
+
+    // Check if player is touching orb, special case for dash orb
+    bool touchingOrb;
+    bool isDashing;
+
+    // Check if input is flipped
+    bool flippedInput;
 
     // Coyote time, allowing player to jump just after leaving platform
     double coyoteTimer;
