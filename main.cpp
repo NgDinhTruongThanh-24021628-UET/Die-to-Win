@@ -3,9 +3,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-/*#include <algorithm>
-#include <cstdlib>
-#include <ctime>*/
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -14,6 +11,8 @@
 #include "Texture.h"
 #include "LevelObjs.h"
 #include "Enums.h"
+#include "LoadLevel.h"
+#include "Rendering.h"
 using namespace std;
 
 // Window sizes
@@ -55,9 +54,10 @@ SDL_Color bgColor[BG_TOTAL_COLOR]={
 Background selectedBG=BLANK;
 LTexture backgroundTexture[TOTAL_BG];
 
+// Texture clipping
 const int NUMBER_OF_BLOCKS=30;
 const int NUMBER_OF_SPIKES=3;
-const int NUMBER_OF_ORBS=3;
+const int NUMBER_OF_ORBS=4;
 const int NUMBER_OF_PADS=3;
 SDL_Rect blockClips[NUMBER_OF_BLOCKS];
 SDL_Rect spikeClips[NUMBER_OF_SPIKES];
@@ -141,20 +141,16 @@ bool loadMedia() {
         success=false;
     }
     else {
-        if (!instructionTexture[0].loadFromRenderedText("Press any key to start", textColor, gMediumFont) ||
-            !instructionTexture[1].loadFromRenderedText("Press left/right to customize background", textColor, gMediumFont) ||
-            !instructionTexture[2].loadFromRenderedText("Press left/right to customize color", textColor, gMediumFont) ||
-            !instructionTexture[3].loadFromRenderedText("Press up/down to select settings", textColor, gMediumFont) ||
-            !instructionTexture[4].loadFromRenderedText("Press Enter to finish", textColor, gMediumFont) ||
+        if (!instructionTexture[0].setTextOnce("Press any key to start", textColor, gMediumFont) ||
+            !instructionTexture[1].setTextOnce("Press left/right to customize background", textColor, gMediumFont) ||
+            !instructionTexture[2].setTextOnce("Press left/right to customize color", textColor, gMediumFont) ||
+            !instructionTexture[3].setTextOnce("Press up/down to select settings", textColor, gMediumFont) ||
+            !instructionTexture[4].setTextOnce("Press Enter to finish", textColor, gMediumFont) ||
 
-            !instructionTexture[10].loadFromRenderedText("Press R to restart, ESC to exit", textColor, gMediumFont) ||
+            !instructionTexture[10].setTextOnce("Press R to restart, ESC to exit", textColor, gMediumFont) ||
 
-            !instructionTexture[20].loadFromRenderedText("Click block: ", textColor, gMediumFont) ||
-            !instructionTexture[21].loadFromRenderedText("Passive income: ", textColor, gMediumFont) ||
-            !instructionTexture[22].loadFromRenderedText("Total money: ", textColor, gMediumFont) ||
-
-            !gameTitleTexture.loadFromRenderedText("Die to Win", textColor, gXtraFont) ||
-            !winMsgTexture.loadFromRenderedText("Congratulations", textColor, gLargeFont)) {
+            !gameTitleTexture.setTextOnce("Die to Win", textColor, gXtraFont) ||
+            !winMsgTexture.setTextOnce("Congratulations", textColor, gLargeFont)) {
             cout << "Failed to render text texture." << endl;
             success=false;
         }
@@ -271,6 +267,7 @@ bool loadMedia() {
         orbClips[0]={0, 0, 160, 160};       // Yellow orb
         orbClips[1]={160, 0, 160, 160};     // Blue orb
         orbClips[2]={320, 0, 160, 160};     // Green orb
+        orbClips[3]={480, 0, 160, 160};     // Dash orb
 
         padClips[0]={0, 160, 160, 160};     // Yellow pad
         padClips[1]={160, 160, 160, 160};   // Spider pad
@@ -345,486 +342,115 @@ void close() {
     SDL_Quit();
 }
 
-// Split the level into tiles to place objects
-const int TILE_SIZE=SCREEN_HEIGHT/10;
-const int LEVEL_WIDTH=19;
-const int LEVEL_HEIGHT=11;
-
-// Vector to store objects
-vector<Block> blocks;
-vector<Spike> spikes;
-vector<JumpOrb> jumpOrbs;
-vector<JumpPad> jumpPads;
-vector<PushableBlock> pushableBlocks;
-
-// Identify block type
-struct BlockInfo {
-    int clipIndex;
-    double rotation;
-    SDL_RendererFlip mirrored;
-};
-unordered_map<string, BlockInfo> blockLookup={
-    {"1C0", {0, 0, SDL_FLIP_NONE}},     // Top left level corner
-    {"1C1", {0, 90, SDL_FLIP_NONE}},    // Top right level corner
-    {"1C2", {0, 180, SDL_FLIP_NONE}},   // Bottom right level corner
-    {"1C3", {0, 270, SDL_FLIP_NONE}},   // Bottom left level corner
-
-    {"1WH", {1, 0, SDL_FLIP_NONE}},     // Horizontal wall
-    {"1WV", {1, 90, SDL_FLIP_NONE}},    // Vertical wall
-
-    {"1TL", {2, 0, SDL_FLIP_NONE}},     // T-block left
-    {"1TU", {2, 90, SDL_FLIP_NONE}},    // T-block up
-    {"1TR", {2, 180, SDL_FLIP_NONE}},   // T-block right
-    {"1TD", {2, 270, SDL_FLIP_NONE}},   // T-block down
-
-    {"1PU", {3, 0, SDL_FLIP_NONE}},     // Platform tip up
-    {"1PR", {3, 90, SDL_FLIP_NONE}},    // Platform tip right
-    {"1PD", {3, 180, SDL_FLIP_NONE}},   // Platform tip down
-    {"1PL", {3, 270, SDL_FLIP_NONE}},   // Platform tip left
-
-    {"1E", {4, 0, SDL_FLIP_NONE}},      // No border block
-    {"1B", {5, 0, SDL_FLIP_NONE}},      // All border block
-    {"1BI", {5, 0, SDL_FLIP_NONE}},     // All border block (interactable)
-    {"1BG", {5, 0, SDL_FLIP_NONE}},     // All border block (green)
-    {"1BO", {5, 0, SDL_FLIP_NONE}},     // All border block (orange)
-
-    {"1I1", {6, 0, SDL_FLIP_NONE}},     // Idle tycoon block 1 - misc upgrade
-    {"1I2", {7, 0, SDL_FLIP_NONE}},     // Idle tycoon block 2 - lower the point block
-    {"1I3", {8, 0, SDL_FLIP_NONE}},     // Idle tycoon block 3 - point upgrade
-    {"1I4", {9, 0, SDL_FLIP_NONE}},     // Idle tycoon block 4 - passive income upgrade
-    {"1IP", {10, 0, SDL_FLIP_NONE}},    // Idle tycoon - point block
-
-    {"1S", {11, 0, SDL_FLIP_NONE}},     // Menu block 1 - settings
-    {"1P", {12, 0, SDL_FLIP_NONE}},     // Menu block 2 - start
-    {"1C", {13, 0, SDL_FLIP_NONE}},     // Menu block 3 - credits
-
-    {"1IN", {14, 0, SDL_FLIP_NONE}},    // Password puzzle - check solution
-    {"1BB", {15, 0, SDL_FLIP_NONE}},    // Pool puzzle - add water
-    {"1SA", {16, 0, SDL_FLIP_NONE}},    // Time puzzle - stop time
-    {"1MV", {17, 0, SDL_FLIP_NONE}},    // Pushable block
-
-    {"1XM", {18, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - move X to next position
-    {"1XI", {19, 0, SDL_FLIP_NONE}},    // Tic-tac-toe puzzle - X block (interactable)
-    {"1X", {19, 0, SDL_FLIP_NONE}},     // Tic-tac-toe puzzle - X block
-    {"1O", {20, 0, SDL_FLIP_NONE}},     // Tic-tac-toe puzzle - O block
-    {"1R", {21, 0, SDL_FLIP_NONE}},     // Reset puzzle
-
-    {"1ZA", {22, 0, SDL_FLIP_NONE}},    // Electricity puzzle - deplete
-
-    {"1K0", {23, 0, SDL_FLIP_NONE}},    // Top left corner block
-    {"1K1", {23, 90, SDL_FLIP_NONE}},   // Top right corner block
-    {"1K2", {23, 180, SDL_FLIP_NONE}},  // Bottom right corner block
-    {"1K3", {23, 270, SDL_FLIP_NONE}},  // Bottom left corner block
-
-    {"1LU", {24, 0, SDL_FLIP_NONE}},    // Line block up
-    {"1LR", {24, 90, SDL_FLIP_NONE}},   // Line block right
-    {"1LD", {24, 180, SDL_FLIP_NONE}},  // Line block down
-    {"1LL", {24, 270, SDL_FLIP_NONE}},  // Line block left
-
-    {"1JL", {28, 0, SDL_FLIP_NONE}},        // Jump-through platform attached to left wall
-    {"1JR", {28, 0, SDL_FLIP_HORIZONTAL}},  // Jump-through platform attached to right wall
-    {"1J", {29, 0, SDL_FLIP_NONE}},         // Jump-through platform in the air
-
-/***********************************************************************************************/
-
-    // Platform tip[25] with spike
-    {"3AU", {25, 0, SDL_FLIP_NONE}},    // Facing up
-    {"3AR", {25, 90, SDL_FLIP_NONE}},   // Facing right
-    {"3AD", {25, 180, SDL_FLIP_NONE}},  // Facing down
-    {"3AL", {25, 270, SDL_FLIP_NONE}},  // Facing left
-
-    // Platform tip[25] with spike, mirrored
-    {"3AUM", {25, 0, SDL_FLIP_HORIZONTAL}},     // Facing up
-    {"3ARM", {25, 90, SDL_FLIP_HORIZONTAL}},    // Facing right
-    {"3ADM", {25, 180, SDL_FLIP_HORIZONTAL}},   // Facing down
-    {"3ALM", {25, 270, SDL_FLIP_HORIZONTAL}},   // Facing left
-
-    // Normal platform[26] with spike
-    {"3CU", {26, 0, SDL_FLIP_NONE}},    // Facing up
-    {"3CR", {26, 90, SDL_FLIP_NONE}},   // Facing right
-    {"3CD", {26, 180, SDL_FLIP_NONE}},  // Facing down
-    {"3CL", {26, 270, SDL_FLIP_NONE}},  // Facing left
-
-    // Normal platform[27] with big spike
-    {"3EU", {27, 0, SDL_FLIP_NONE}},    // Facing up
-    {"3ER", {27, 90, SDL_FLIP_NONE}},   // Facing right
-    {"3ED", {27, 180, SDL_FLIP_NONE}},  // Facing down
-    {"3EL", {27, 270, SDL_FLIP_NONE}}   // Facing left
-};
-
-// Identify spike type
-struct SpikeInfo {
-    int clipIndex;
-    double rotation;
-    SDL_RendererFlip mirrored;
-};
-unordered_map<string, SpikeInfo> spikeLookup={ // Note: Spike platform migrated to blocks (number 3 in front)
-    // Platform tip with spike[0]
-    {"2AU", {0, 0, SDL_FLIP_NONE}},     // Facing up
-    {"2AR", {0, 90, SDL_FLIP_NONE}},    // Facing right
-    {"2AD", {0, 180, SDL_FLIP_NONE}},   // Facing down
-    {"2AL", {0, 270, SDL_FLIP_NONE}},   // Facing left
-
-    // Platform tip with spike[0], mirrored
-    {"2AUM", {0, 0, SDL_FLIP_HORIZONTAL}},      // Facing up
-    {"2ARM", {0, 90, SDL_FLIP_HORIZONTAL}},     // Facing right
-    {"2ADM", {0, 180, SDL_FLIP_HORIZONTAL}},    // Facing down
-    {"2ALM", {0, 270, SDL_FLIP_HORIZONTAL}},    // Facing left
-
-    // Normal platform with spike[1]
-    {"2CU", {1, 0, SDL_FLIP_NONE}},     // Facing up
-    {"2CR", {1, 90, SDL_FLIP_NONE}},    // Facing right
-    {"2CD", {1, 180, SDL_FLIP_NONE}},   // Facing down
-    {"2CL", {1, 270, SDL_FLIP_NONE}},   // Facing left
-
-    // Normal platform with big spike[2]
-    {"2EU", {2, 0, SDL_FLIP_NONE}},     // Facing up
-    {"2ER", {2, 90, SDL_FLIP_NONE}},    // Facing right
-    {"2ED", {2, 180, SDL_FLIP_NONE}},   // Facing down
-    {"2EL", {2, 270, SDL_FLIP_NONE}},    // Facing left
-};
-
-// Identify jump orb type
-struct JumpOrbInfo {
-    int clipIndex;
-    float offsetX;
-    float offsetY;
-};
-unordered_map<string, JumpOrbInfo> jumpOrbLookup={
-    // Yellow orb
-    {"Y", {0, 0, 0}},                           // Normal
-    {"YX", {0, TILE_SIZE/2, 0}},                // X increase
-    {"YY", {0, 0, TILE_SIZE/2}},                // Y increase
-    {"YXY", {0, TILE_SIZE/2, TILE_SIZE/2}},     // Both increase
-
-    // Blue orb
-    {"B", {1, 0, 0}},
-    {"BX", {1, TILE_SIZE/2, 0}},
-    {"BY", {1, 0, TILE_SIZE/2}},
-    {"BXY", {1, TILE_SIZE/2, TILE_SIZE/2}},
-
-    // Green orb
-    {"G", {2, 0, 0}},
-    {"GX", {2, TILE_SIZE/2, 0}},
-    {"GY", {2, 0, TILE_SIZE/2}},
-    {"GXY", {2, TILE_SIZE/2, TILE_SIZE/2}},
-};
-
-// Identify jump pad type
-struct JumpPadInfo {
-    int clipIndex;
-    double rotation;
-};
-unordered_map<string, JumpPadInfo> jumpPadLookup={
-    {"JU", {0, 0}},      // Yellow pad up
-    {"JD", {0, 180}},    // Yellow pad down
-
-    {"SU", {1, 0}},      // Spider pad up
-    {"SR", {1, 90}},     // Spider pad right
-    {"SD", {1, 180}},    // Spider pad down
-    {"SL", {1, 270}},    // Spider pad left
-
-    {"PU", {2, 0}},      // Pink pad up
-    {"PD", {2, 180}},    // Pink pad down
-};
-
-// Load level from a file
-void loadLevel(const string &path, vector<Block> &blocks, vector<PushableBlock> &pushableBlocks,
-               vector<Spike> &spikes, vector<JumpOrb> &jumpOrbs, vector<JumpPad> &jumpPads) {
-    ifstream file(path);
-    if (!file.is_open()) {
-        cout << "Failed to open level file." << endl;
-        return;
-    }
-
-    blocks.clear(); pushableBlocks.clear(); spikes.clear(); jumpOrbs.clear(); jumpPads.clear();
-
-    // Read file and store objects
-    string tile;
-    int row=0;
-    while (row<LEVEL_HEIGHT) {
-        for (int col=0; col<LEVEL_WIDTH; col++) {
-            float baseX=col*TILE_SIZE-TILE_SIZE*11/18;
-            float baseY=row*TILE_SIZE-TILE_SIZE*9/18;
-
-            file >> tile;
-
-            // Store blocks
-            if (blockLookup.find(tile)!=blockLookup.end()) {
-                BlockInfo info=blockLookup[tile];
-                if (tile!="1MV") blocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE, info.rotation, info.mirrored, tile);
-                else pushableBlocks.emplace_back(baseX, baseY, TILE_SIZE, TILE_SIZE);
-            }
-
-            // Store spikes
-            else if (spikeLookup.find(tile)!=spikeLookup.end()) {
-                SpikeInfo info=spikeLookup[tile];
-                if (tile[1]=='A' || tile[1]=='C') { // Small spike
-                    if (info.rotation==0) {
-                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE*7/10.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                    else if (info.rotation==90) {
-                        spikes.emplace_back(baseX+TILE_SIZE/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                    else if (info.rotation==180) {
-                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE/10.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                    else if (info.rotation==270) {
-                        spikes.emplace_back(baseX+TILE_SIZE*7/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                }
-                else if (tile[1]=='E') { // Big spike
-                    if (info.rotation==0 || info.rotation==180) {
-                        spikes.emplace_back(baseX+TILE_SIZE*2/5.0f, baseY+TILE_SIZE*3/10.0f, TILE_SIZE/5.0f, TILE_SIZE*2/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                    else if (info.rotation==90 || info.rotation==270) {
-                        spikes.emplace_back(baseX+TILE_SIZE*3/10.0f, baseY+TILE_SIZE*2/5.0f, TILE_SIZE*2/5.0f, TILE_SIZE/5.0f, info.rotation, info.mirrored, tile);
-                    }
-                }
-            }
-
-            // Store jump pads
-            else if (jumpPadLookup.find(tile)!=jumpPadLookup.end()) {
-                JumpPadInfo info=jumpPadLookup[tile];
-                if (tile[0]=='J' || tile[0]=='P') {
-                    if (info.rotation==0) {
-                        jumpPads.emplace_back(baseX+TILE_SIZE/12.0f, baseY+TILE_SIZE*13/15.0f, TILE_SIZE*10/12.0f, TILE_SIZE/6.0f, info.rotation, tile);
-                    }
-                    else if (info.rotation==180) {
-                        jumpPads.emplace_back(baseX+TILE_SIZE/12.0f, baseY-TILE_SIZE/30.0f, TILE_SIZE*10/12.0f, TILE_SIZE/6.0f, info.rotation, tile);
-                    }
-                }
-                else if (tile[0]=='S') { // Spider pad
-                    if (info.rotation==0) {
-                        jumpPads.emplace_back(baseX+TILE_SIZE/30.0f, baseY+TILE_SIZE*3/4.0f, TILE_SIZE*14/15.0f, TILE_SIZE*2/5.0f, info.rotation, tile);
-                    }
-                    else if (info.rotation==90) {
-                        jumpPads.emplace_back(baseX-TILE_SIZE*3/20.0f, baseY+TILE_SIZE/30.0f, TILE_SIZE*2/5.0f, TILE_SIZE*14/15.0f, info.rotation, tile);
-                    }
-                    else if (info.rotation==180) {
-                        jumpPads.emplace_back(baseX+TILE_SIZE/30.0f, baseY-TILE_SIZE*3/20.0f, TILE_SIZE*14/15.0f, TILE_SIZE*2/5.0f, info.rotation, tile);
-                    }
-                    else if (info.rotation==270) {
-                        jumpPads.emplace_back(baseX+TILE_SIZE*3/4.0f, baseY+TILE_SIZE/30.0f, TILE_SIZE*2/5.0f, TILE_SIZE*14/15.0f, info.rotation, tile);
-                    }
-                }
-            }
-
-            // Store jump orbs
-            else if (jumpOrbLookup.find(tile)!=jumpOrbLookup.end()) {
-                JumpOrbInfo info=jumpOrbLookup[tile];
-                jumpOrbs.emplace_back(baseX-TILE_SIZE/10.0f+info.offsetX, baseY-TILE_SIZE/10.0f+info.offsetY, TILE_SIZE*12/10.0f, TILE_SIZE*12/10.0f, tile[0]);
-            }
-        }
-
-        row++;
-    }
-
-    file.close();
-}
-
-void renderLevel(const vector<Block> &blocks, const vector<PushableBlock> &pushableBlocks, const vector<Spike> &spikes,
-                 const vector<JumpOrb> &jumpOrbs, const vector<JumpPad> &jumpPads, double deltaTime) {
-    // Render orbs
-    for (const auto &orb : jumpOrbs) {
-        SDL_FRect renderOrb={orb.getHitbox().x+TILE_SIZE/10.0f, orb.getHitbox().y+TILE_SIZE/10.0f, TILE_SIZE, TILE_SIZE};
-        switch (orb.getType()) {
-        case 'Y': // Yellow
-            orbPadSheetTexture.render(renderOrb, &orbClips[0], 0, nullptr, SDL_FLIP_NONE);
-            break;
-        case 'B': // Blue
-            orbPadSheetTexture.render(renderOrb, &orbClips[1], 0, nullptr, SDL_FLIP_NONE);
-            break;
-        case 'G': // Green
-            orb.updateRotation(deltaTime);
-            orbPadSheetTexture.render(renderOrb, &orbClips[2], orb.rotationAngle, nullptr, SDL_FLIP_NONE);
-            break;
-        }
-    }
-
-    // Render pads
-    for (const auto &pad : jumpPads) {
-        string type=pad.getType();
-        if (jumpPadLookup.find(type)!=jumpPadLookup.end()) {
-            JumpPadInfo info=jumpPadLookup[type];
-            SDL_FRect renderPad;
-            if (type[0]=='J' || type[0]=='P') {
-                if (info.rotation==0) {
-                    renderPad={pad.getHitbox().x-TILE_SIZE/12.0f, pad.getHitbox().y-TILE_SIZE*13/15.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==180) {
-                    renderPad={pad.getHitbox().x-TILE_SIZE/12.0f, pad.getHitbox().y+TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
-                }
-            }
-            else if (type[0]=='S') { // Spider
-                if (info.rotation==0) {
-                    renderPad={pad.getHitbox().x-TILE_SIZE/30.0f, pad.getHitbox().y-TILE_SIZE*3/4.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==90) {
-                    renderPad={pad.getHitbox().x+TILE_SIZE*3/20.0f, pad.getHitbox().y-TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==180) {
-                    renderPad={pad.getHitbox().x-TILE_SIZE/30.0f, pad.getHitbox().y+TILE_SIZE*3/20.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==270) {
-                    renderPad={pad.getHitbox().x-TILE_SIZE*3/4.0f, pad.getHitbox().y-TILE_SIZE/30.0f, TILE_SIZE, TILE_SIZE};
-                }
-            }
-            orbPadSheetTexture.render(renderPad, &padClips[info.clipIndex], info.rotation, nullptr, SDL_FLIP_NONE);
-        }
-    }
-
-    // Render spikes
-    for (const auto &spike : spikes) {
-        string type=spike.getType();
-        if (spikeLookup.find(type)!=spikeLookup.end()) {
-            SpikeInfo info=spikeLookup[type];
-            SDL_FRect renderSpike;
-            if (type[1]=='A' || type[1]=='C') { // Small spike
-                if (info.rotation==0) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE*7/10.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==90) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==180) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE/10.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==270) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE*7/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
-                }
-            }
-            else if (type[1]=='E') { // Big spike
-                if (info.rotation==0 || info.rotation==180) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE*2/5.0f, spike.getHitbox().y-TILE_SIZE*3/10.0f, TILE_SIZE, TILE_SIZE};
-                }
-                else if (info.rotation==90 || info.rotation==270) {
-                    renderSpike={spike.getHitbox().x-TILE_SIZE*3/10.0f, spike.getHitbox().y-TILE_SIZE*2/5.0f, TILE_SIZE, TILE_SIZE};
-                }
-            }
-            blockSheetTexture.render(renderSpike, &spikeClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
-        }
-    }
-
-    // Render platforms (blocks)
-    for (const auto &block : blocks) {
-        string type=block.getType();
-        if (blockLookup.find(type)!=blockLookup.end()) {
-            BlockInfo info=blockLookup[type];
-            SDL_FRect renderBlock=block.getHitbox();
-            blockSheetTexture.render(renderBlock, &blockClips[info.clipIndex], info.rotation, nullptr, info.mirrored);
-            if (type=="1BG") {
-                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 160);
-                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
-            }
-            if (type=="1BO") {
-                SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(gRenderer, 255, 102, 0, 160);
-                SDL_RenderFillRectF(gRenderer, &block.getHitbox());
-            }
-        }
-    }
-
-    for (const auto &block : pushableBlocks) {
-        SDL_FRect renderBlock=block.getHitbox();
-        blockSheetTexture.render(renderBlock, &blockClips[17], 0, nullptr, SDL_FLIP_NONE);
-    }
-}
-
 bool uniqueDigits=true;
 void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting,
                         const string &levelName, const int &levelIndex) {
 
-    if (currentStatus==PLAYING && levelName=="Cookies") {
-        vector<Block*> textPlat;
-        for (Block &block : blocks) {
-            if (block.getType()=="1IP") {
-                instructionTexture[20].setTextOnce(to_string(cube.getGainPerHit()), textColor, gSmallFont);
-                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
-                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
-            }
-            if (block.getType()=="1I2") {
-                instructionTexture[20].setTextOnce((block.counter<5 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
-                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
-                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
-            }
-            if (block.getType()=="1I3" || block.getType()=="1I4") {
-                instructionTexture[20].setTextOnce((block.counter<25 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
-                instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
-                                              block.getHitbox().y-instructionTexture[20].getHeight()+6);
-            }
-            if (block.getType()=="1PL") {
-                textPlat.push_back(&block);
-            }
-        }
-        instructionTexture[21].loadFromRenderedText(to_string(cube.getTotalMoney()), textColor, gMediumFont);
-        instructionTexture[21].render(textPlat[0]->getHitbox().x+(TILE_SIZE*5-instructionTexture[21].getWidth())/2,
-                                      textPlat[0]->getHitbox().y+(TILE_SIZE-instructionTexture[21].getHeight())/2);
+    if (currentStatus==MENU) {
+        instructionTexture[14].setTextOnce("Menu", textColor, gTinyFont);
+        instructionTexture[14].render(4, -4);
+        instructionTexture[14].render(SCREEN_WIDTH-instructionTexture[14].getWidth()-4, -4);
 
-        instructionTexture[22].setTextOnce(to_string(cube.getPassiveIncome())+" /sec", textColor, gMediumFont);
-        instructionTexture[22].render(textPlat[1]->getHitbox().x+(TILE_SIZE*5-instructionTexture[22].getWidth())/2,
-                                      textPlat[1]->getHitbox().y+(TILE_SIZE-instructionTexture[22].getHeight())/2);
-
-        textPlat.clear();
-    }
-
-    for (const Block &block : blocks) {
-        if (currentStatus==PLAYING) {
-            instructionTexture[15].setTextOnce("Level "+to_string(levelIndex), textColor, gTinyFont);
-            instructionTexture[15].render(4, -4);
-            instructionTexture[16].setTextOnce(levelName, textColor, gTinyFont);
-            instructionTexture[16].render(SCREEN_WIDTH-instructionTexture[16].getWidth()-4, -4);
-        }
-        if (block.getType()=="1I1" || block.getType()=="1I2" || block.getType()=="1I3" || block.getType()=="1I4") {
-            instructionTexture[25].loadFromRenderedText(to_string(block.counter), textColor, gTinyFont);
-            instructionTexture[25].render(block.getHitbox().x+TILE_SIZE/12, block.getHitbox().y);
-        }
-        if (block.getType()=="1S") {
-            instructionTexture[30].loadFromRenderedText("Settings", textColor, gMediumFont);
-            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[30].getHeight());
-        }
-        if (block.getType()=="1P") {
-            instructionTexture[30].loadFromRenderedText("Play", textColor, gMediumFont);
-            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[30].getHeight());
-        }
-        if (block.getType()=="1C") {
-            instructionTexture[30].loadFromRenderedText("Credits", textColor, gMediumFont);
-            instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
-                                           block.getHitbox().y-instructionTexture[30].getHeight());
-        }
-        if (block.getType()=="1K0") {
-            gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
-        }
-        if (block.getType()=="1K2") {
-            instructionTexture[30].loadFromRenderedText("v0.5 ", textColor, gSmallFont);
-            instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
-                                           block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
-        }
-        if (levelName=="Enigma" && (block.getType()=="1BG" || block.getType()=="1BO" || block.getType()=="1BI")) {
-            instructionTexture[40].loadFromRenderedText(to_string(block.counter), textColor, gMediumFont);
-            instructionTexture[40].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[40].getWidth())/2,
-                                          block.getHitbox().y+(block.getHitbox().h-instructionTexture[40].getHeight())/2);
-        }
-        if (levelName=="Enigma" && !uniqueDigits) {
-            instructionTexture[41].setTextOnce("Password should contain 4 different digits", textColor, gMediumFont);
-            instructionTexture[41].render((SCREEN_WIDTH-instructionTexture[41].getWidth())/2, SCREEN_HEIGHT/2);
+        for (const Block &block : blocks) {
+            if (block.getType()=="1S") {
+                instructionTexture[30].setTextOnce("Settings", textColor, gMediumFont);
+                instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                               block.getHitbox().y-instructionTexture[30].getHeight());
+            }
+            if (block.getType()=="1P") {
+                instructionTexture[30].setTextOnce("Play", textColor, gMediumFont);
+                instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                               block.getHitbox().y-instructionTexture[30].getHeight());
+            }
+            if (block.getType()=="1C") {
+                instructionTexture[30].setTextOnce("Credits", textColor, gMediumFont);
+                instructionTexture[30].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[30].getWidth())/2,
+                                               block.getHitbox().y-instructionTexture[30].getHeight());
+            }
+            if (block.getType()=="1K0") {
+                gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
+            }
+            if (block.getType()=="1K2") {
+                instructionTexture[30].setTextOnce("v0.5 ", textColor, gSmallFont);
+                instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
+                                               block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
+            }
         }
     }
 
-    if (levelName=="Illusion World" && cube.timeStopped) {
-        instructionTexture[45].loadFromRenderedText(to_string(int(cube.timeStopTimer)+1), textColor, gXtraFont);
-        instructionTexture[45].setAlpha(100);
-        instructionTexture[45].render((SCREEN_WIDTH-instructionTexture[45].getWidth())/2, (SCREEN_HEIGHT-instructionTexture[45].getHeight())/2);
+    else if (currentStatus==PLAYING) {
+        instructionTexture[15].setTextOnce("Level "+to_string(levelIndex), textColor, gTinyFont);
+        instructionTexture[15].render(4, -4);
+        instructionTexture[16].setTextOnce(levelName, textColor, gTinyFont);
+        instructionTexture[16].render(SCREEN_WIDTH-instructionTexture[16].getWidth()-4, -4);
+
+        if (levelName=="Cookies") {
+            vector<Block*> textPlat;
+            for (Block &block : blocks) {
+                if (block.getType()=="1IP") {
+                    instructionTexture[20].setTextOnce(to_string(cube.getGainPerHit()), textColor, gSmallFont);
+                    instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                                  block.getHitbox().y-instructionTexture[20].getHeight()+6);
+                }
+                if (block.getType()=="1I2") {
+                    instructionTexture[20].setTextOnce((block.counter<5 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
+                    instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                                  block.getHitbox().y-instructionTexture[20].getHeight()+6);
+                }
+                if (block.getType()=="1I3" || block.getType()=="1I4") {
+                    instructionTexture[20].setTextOnce((block.counter<25 ? to_string(block.value) : "MAX"), textColor, gSmallFont);
+                    instructionTexture[20].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[20].getWidth())/2,
+                                                  block.getHitbox().y-instructionTexture[20].getHeight()+6);
+                }
+                if (block.getType()=="1I2" || block.getType()=="1I3" || block.getType()=="1I4") {
+                    instructionTexture[25].setTextOnce(to_string(block.counter), textColor, gTinyFont);
+                    instructionTexture[25].render(block.getHitbox().x+TILE_SIZE/12, block.getHitbox().y);
+                }
+                if (block.getType()=="1PL") {
+                    textPlat.push_back(&block);
+                }
+            }
+            instructionTexture[21].loadFromRenderedText(to_string(cube.getTotalMoney()), textColor, gMediumFont);
+            instructionTexture[21].render(textPlat[0]->getHitbox().x+(TILE_SIZE*5-instructionTexture[21].getWidth())/2,
+                                          textPlat[0]->getHitbox().y+(TILE_SIZE-instructionTexture[21].getHeight())/2);
+
+            instructionTexture[22].setTextOnce(to_string(cube.getPassiveIncome())+" /sec", textColor, gMediumFont);
+            instructionTexture[22].render(textPlat[1]->getHitbox().x+(TILE_SIZE*5-instructionTexture[22].getWidth())/2,
+                                          textPlat[1]->getHitbox().y+(TILE_SIZE-instructionTexture[22].getHeight())/2);
+
+            textPlat.clear();
+        }
+
+        else if (levelName=="Enigma") {
+            for (Block &block : blocks) {
+                if (block.getType()=="1BG" || block.getType()=="1BO" || block.getType()=="1BI") {
+                    instructionTexture[40].loadFromRenderedText(to_string(block.counter), textColor, gMediumFont);
+                    instructionTexture[40].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[40].getWidth())/2,
+                                                  block.getHitbox().y+(block.getHitbox().h-instructionTexture[40].getHeight())/2);
+                }
+                if (!uniqueDigits) {
+                    instructionTexture[41].setTextOnce("Password should contain 4 different digits", textColor, gMediumFont);
+                    instructionTexture[41].render((SCREEN_WIDTH-instructionTexture[41].getWidth())/2, SCREEN_HEIGHT/2);
+                }
+            }
+        }
+
+        else if (levelName=="Illusion World") {
+            if (cube.timeStopped) {
+                instructionTexture[45].loadFromRenderedText(to_string(int(cube.timeStopTimer)+1), textColor, gXtraFont);
+                instructionTexture[45].setAlpha(100);
+                instructionTexture[45].render((SCREEN_WIDTH-instructionTexture[45].getWidth())/2, (SCREEN_HEIGHT-instructionTexture[45].getHeight())/2);
+            }
+        }
     }
 }
 
-const int ALL_LEVELS=11;
-string levelName[ALL_LEVELS]={"The Hub", "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error",
-                              "Labyrinth", "Enigma", "Cookies", "Move to Die", "Illusion World"};
-static int levelIndex=1;
+const int ALL_LEVELS=14;
+string levelName[ALL_LEVELS]={"The Hub",
+                              "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error", "Dash",
+                              "Labyrinth", "Enigma", "Move to Die", "Cookies", "Illusion World", "Five Nights",
+                              "Vertigo"};
+static int levelIndex=13;
 
 int main(int argc, char *argv[]) {
     if (!init()) {

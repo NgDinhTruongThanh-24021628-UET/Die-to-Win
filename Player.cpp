@@ -22,6 +22,8 @@ Player::Player() {
     onPlatform=false;
     hitCeiling=false;
     reverseGravity=false;
+    touchingOrb=false;
+    isDashing=false;
     coyoteTimer=0.0;
     totalMoney=0;
     gainPerHit=1;
@@ -29,6 +31,7 @@ Player::Player() {
     income=0;
 }
 
+// Reset player status
 void Player::reset() {
     mPosX=2*TILE_SIZE-TILE_SIZE*11/18;
     mPosY=SCREEN_HEIGHT-3*PLAYER_HEIGHT-TILE_SIZE*9/18;
@@ -41,13 +44,14 @@ void Player::reset() {
     onPlatform=false;
     hitCeiling=false;
     reverseGravity=false;
+    touchingOrb=false;
+    isDashing=false;
     coyoteTimer=0.0;
     totalMoney=0;
     gainPerHit=1;
     passiveIncome=0;
     income=0;
 }
-
 void Player::resetBool() {
     isJumpHeld=false;
     canJump=true;
@@ -55,6 +59,8 @@ void Player::resetBool() {
     moveRight=false;
     onPlatform=false;
     hitCeiling=false;
+    touchingOrb=false;
+    isDashing=false;
 }
 
 // Handle mouse + keyboard events
@@ -65,10 +71,12 @@ void Player::handleEvent(SDL_Event &e) {
         case SDLK_LEFT:
         case SDLK_a:
             moveLeft=true;
+            std::cout << "pressing left" << std::endl;
             break;
         case SDLK_RIGHT:
         case SDLK_d:
             moveRight=true;
+            std::cout << "pressing right" << std::endl;
             break;
         case SDLK_SPACE:
         case SDLK_UP:
@@ -158,18 +166,38 @@ void Player::forcePushIntoGap(std::vector<Block> &blocks) {
 }
 
 // Move player, platform physics included, deltaTime for consistent physics
-void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes, std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime) {
+void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
+                  std::vector<JumpOrb> &jumpOrbs, GameStatus &currentStatus, const std::string &levelName, double deltaTime) {
+
+    // If player touches both orb and platform, prioritize orb
+    touchingOrb=false;
+    if (!isJumpHeld || hitCeiling) isDashing=false;
+
+    for (auto &orb : jumpOrbs) {
+        if (orb.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+            touchingOrb=true;
+        }
+    }
+
+    // Flip input
+    if (levelName=="Vertigo") {
+        flippedInput=true;
+    }
+    else flippedInput=false;
 
     // Horizontal movement
-    if (moveLeft && !moveRight) {
-        mVelX=-X_VELOCITY;
+    if (!isDashing || !isJumpHeld) {
+        if (moveLeft && !moveRight) {
+            mVelX=(flippedInput ? X_VELOCITY : -X_VELOCITY);
+        }
+        else if (moveRight && !moveLeft) {
+            mVelX=(flippedInput ? -X_VELOCITY : X_VELOCITY);
+        }
+        else {
+            mVelX=0.0;
+        }
     }
-    else if (moveRight && !moveLeft) {
-        mVelX=X_VELOCITY;
-    }
-    else {
-        mVelX=0.0;
-    }
+    else mVelX=0.0;
 
     double nextPosX=mPosX+mVelX*deltaTime;
 
@@ -193,13 +221,15 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
 
     // Vertical movement
     // Gravity (scaled by deltaTime)
-    if (!reverseGravity) {
-        mVelY+=GRAVITY*deltaTime;
-        if (mVelY>TERMINAL_VELOCITY) mVelY=TERMINAL_VELOCITY;
-    }
-    else {
-        mVelY-=GRAVITY*deltaTime;
-        if (mVelY<-TERMINAL_VELOCITY) mVelY=-TERMINAL_VELOCITY;
+    if (!isDashing) { // Dash orb ignores gravity
+        if (!reverseGravity) {
+            mVelY+=GRAVITY*deltaTime;
+            if (mVelY>TERMINAL_VELOCITY) mVelY=TERMINAL_VELOCITY;
+        }
+        else {
+            mVelY-=GRAVITY*deltaTime;
+            if (mVelY<-TERMINAL_VELOCITY) mVelY=-TERMINAL_VELOCITY;
+        }
     }
 
     double nextPosY=mPosY+mVelY*deltaTime;
@@ -210,7 +240,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
     for (auto &block : blocks) {
         if (block.checkYCollision(mPosX, mPosY, nextPosY, mVelY, PLAYER_WIDTH, PLAYER_HEIGHT,
                                   onPlatform, hitCeiling, reverseGravity)) {
-            mVelY=0.0;
+            if (!isDashing) mVelY=0.0;
             if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
                                                   blocks, pushableBlocks, spikes, levelName, deltaTime,
                                                   timeStopped, timeStopTimer);
@@ -230,14 +260,6 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
     else {
         coyoteTimer-=deltaTime; // Countdown in air
         if (coyoteTimer<0) coyoteTimer=0;
-    }
-
-    // If player touches both orb and platform, prioritize orb
-    bool touchingOrb=false;
-    for (auto &orb : jumpOrbs) {
-        if (orb.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
-            touchingOrb=true;
-        }
     }
 
     // Allowing jump once
@@ -345,7 +367,7 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
         totalMoney+=passiveIncome;
         income=0;
     }
-    if (totalMoney>10000000) {
+    if (totalMoney>1000000) {
         for (auto &spike : spikes) {
             if (!spike.unlocked) {
                 spike.unlocked=true;
@@ -359,8 +381,8 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
     if (timeStopped) {
         SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 80);
-        SDL_Rect timeStopOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
-        SDL_RenderFillRect(gRenderer, &timeStopOverlay);
+        SDL_FRect timeStopOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
+        SDL_RenderFillRectF(gRenderer, &timeStopOverlay);
 
         timeStopTimer-=deltaTime;
         if (timeStopTimer<0) {
@@ -404,6 +426,12 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
                 else {
                     reverseGravity=false;
                     mVelY=JUMP_VELOCITY;
+                }
+                break;
+            case 'D': // Dash orb
+                if (isJumpHeld) {
+                    mVelY=-GRAVITY/8;
+                    isDashing=true;
                 }
                 break;
             }
