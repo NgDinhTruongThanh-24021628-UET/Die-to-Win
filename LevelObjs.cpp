@@ -576,7 +576,7 @@ void Block::interactTicTacToe(std::vector<Block> &blocks, std::vector<Spike> &sp
     }
 
     // Reset game
-    else if (blockType == "1R") {
+    if (blockType == "1R") {
         for (int r=0; r<3; r++) {
             for (int c=0; c<3; c++) {
                 tttBoard[r][c]->switchType("1E");
