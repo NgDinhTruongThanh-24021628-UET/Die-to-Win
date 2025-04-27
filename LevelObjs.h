@@ -7,6 +7,8 @@
 
 extern const float TILE_SIZE;
 
+extern bool uniqueDigitsInPassword;
+
 class Block;
 class PushableBlock;
 class Spike;
@@ -33,12 +35,13 @@ public:
     bool isInteractable() const;
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                   std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                  const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer);
+                  const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent);
 
     void interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
                          std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
-    void interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
+    void interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes);
     void interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer);
+    void interactFiveNights(std::vector<Block> &blocks, int &powerPercent);
 
     double angle;
     SDL_RendererFlip mirror;

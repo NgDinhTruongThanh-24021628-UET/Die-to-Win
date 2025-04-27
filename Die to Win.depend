@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1745686637 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745728814 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -16,15 +16,16 @@
 	"LoadLevel.h"
 	"Rendering.h"
 
-1745688379 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745717012 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 	"Enums.h"
 
-1745687827 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745721434 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
+	<SDL_mixer.h>
 	<cmath>
 	"Player.h"
 	"Texture.h"
@@ -70,13 +71,13 @@
 	<iostream>
 	<SDL.h>
 
-1745671953 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745727218 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 	"Enums.h"
 
-1745671033 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745730366 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<string>
 	<vector>
@@ -111,7 +112,7 @@
 	"LevelObjs.h"
 	"LoadLevel.h"
 
-1745679495 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
+1745727116 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
 	<string>
 	<vector>
 	<SDL.h>
@@ -119,6 +120,6 @@
 	"LevelObjs.h"
 	"LoadLevel.h"
 
-1745671953 c:\users\truong thanh\documents\sdl projects\die to win\rendering.h
+1745727116 c:\users\truong thanh\documents\sdl projects\die to win\rendering.h
 	<vector>
 

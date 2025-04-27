@@ -9,13 +9,11 @@
 #include "LevelObjs.h"
 #include "Player.h"
 #include "Enums.h"
-using namespace std;
 
 extern SDL_Renderer *gRenderer;
 extern LTexture instructionTexture[];
 extern TTF_Font *gSmallFont;
 extern SDL_Color textColor;
-extern bool uniqueDigits;
 
 // Create random password
 #include <algorithm>
@@ -35,6 +33,7 @@ void generateEnigmaPassword() {
 
 Block::Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type) {
     hitbox={x, y, w, h};
+    realX=x, realY=y;
     angle=a;
     blockType=type;
     mirror=m;
@@ -113,7 +112,7 @@ bool Block::checkYCollision(double playerX, double &playerY, double &nextPlayerY
 const SDL_FRect &Block::getHitbox() const {
     return hitbox;
 }
-const string &Block::getType() const {
+const std::string &Block::getType() const {
     return blockType;
 }
 void Block::movingBlock(double deltaTime) {
@@ -137,16 +136,16 @@ void Block::offsetPosition(float offsetX, float offsetY) {
 }
 
 bool Block::isInteractable() const {
-    string type[12]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C", "1BI", "1IN",
-                     "1R", "1SA"};
-    for (int i=0; i<12; i++) {
+    std::string type[13]={"1I1", "1I2", "1I3", "1I4", "1IP", "1S", "1P", "1C", "1BI", "1IN",
+                     "1R", "1SA", "1ZA"};
+    for (int i=0; i<13; i++) {
         if (blockType==type[i]) return true;
     }
     return false;
 }
 void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
-                     vector<Block> &blocks, vector<PushableBlock> &pushableBlocks, vector<Spike> &spikes,
-                     const string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer) {
+                     std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
+                     const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent) {
     if (!isInteractable()) return;
     if (blockType=="1S") {
         currentStatus=SETTINGS;
@@ -161,10 +160,13 @@ void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passi
         interactClicker(totalMoney, gainPerHit, passiveIncome, blocks, spikes, deltaTime);
     }
     else if (levelName=="Enigma") {
-        interactEnigma(blocks, spikes, deltaTime);
+        interactEnigma(blocks, spikes);
     }
     else if (levelName=="Move to Die" || levelName=="Illusion World") {
         interactMoveToDie(blocks, pushableBlocks, timeStopped, timeStopTimer);
+    }
+    else if (levelName=="Five Nights") {
+        interactFiveNights(blocks, powerPercent);
     }
 }
 
@@ -184,14 +186,13 @@ void Block::interactClicker(unsigned long long &totalMoney, int &gainPerHit, int
         speed=50.0f;
         totalMoney+=gainPerHit;
     }
-    else if (blockType=="1I2") {
+    else if (blockType=="1I2") { // Lower point block position
         if (counter>=5) counter=5;
         else {
             if (totalMoney>=(unsigned long long)value) {
                 for (auto &block : blocks) {
                     if (block.getType()=="1IP") {
                         block.unlocked=true;
-                        block.realX=block.getHitbox().x;
                         block.realY=block.getHitbox().y+TILE_SIZE/4;
                     }
                 }
@@ -236,14 +237,15 @@ void Block::interactClicker(unsigned long long &totalMoney, int &gainPerHit, int
     }
 }
 
-void Block::interactEnigma(vector<Block> &blocks, vector<Spike> &spikes, double deltaTime) {
+bool uniqueDigitsInPassword=true;
+void Block::interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes) {
     if (spikes.empty()) spikes.emplace_back(800+TILE_SIZE*2/5.0f, 800+TILE_SIZE*3/10.0f, TILE_SIZE/5.0f, TILE_SIZE*2/5.0f, 0, SDL_FLIP_NONE, "2EU");
     if (enigmaPassword.empty()) generateEnigmaPassword();
     if (blockType=="1BI") {
         counter=(counter+1)%10;
     }
     else if (blockType=="1IN") {
-        vector<Block*> digits;
+        std::vector<Block*> digits;
         for (auto &block : blocks) {
             if (block.getType()=="1BI") {
                 digits.push_back(&block);
@@ -254,16 +256,16 @@ void Block::interactEnigma(vector<Block> &blocks, vector<Spike> &spikes, double 
         for (int i=0; i<int(digits.size())-1; i++) {
             for (int j=i+1; j<int(digits.size()); j++) {
                 if (digits[i]->counter==digits[j]->counter) {
-                    uniqueDigits=false;
+                    uniqueDigitsInPassword=false;
                     return;
                 }
             }
         }
-        uniqueDigits=true;
+        uniqueDigitsInPassword=true;
 
         int correctPos=0, wrongPos=0;
-        vector<bool> passwordUsed(enigmaPassword.size(), false);
-        vector<bool> guessUsed(digits.size(), false);
+        std::vector<bool> passwordUsed(enigmaPassword.size(), false);
+        std::vector<bool> guessUsed(digits.size(), false);
         for (int i=0; i<int(digits.size()); i++) {
             if (digits[i]->counter==enigmaPassword[i]) {
                 correctPos++;
@@ -299,7 +301,7 @@ void Block::interactEnigma(vector<Block> &blocks, vector<Spike> &spikes, double 
     }
 }
 
-void Block::interactMoveToDie(vector<Block> &blocks, vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer) {
+void Block::interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer) {
     if (blockType=="1R") {
         for (auto &block : pushableBlocks) {
             if (timeStopped) {
@@ -318,6 +320,27 @@ void Block::interactMoveToDie(vector<Block> &blocks, vector<PushableBlock> &push
     }
 }
 
+void Block::interactFiveNights(std::vector<Block> &blocks, int &powerPercent) {
+    if (blockType=="1ZA") {
+        if (powerPercent>=5) {
+            powerPercent-=5;
+        }
+        else powerPercent=0;
+
+        for (auto &block : blocks) {
+            if (block.getType()=="1ZA") {
+                if (powerPercent>0) block.unlocked=true;
+                if (block.realY<SCREEN_HEIGHT-4*TILE_SIZE) {
+                    block.realY+=2*TILE_SIZE;
+                }
+                else {
+                    block.realY-=2*TILE_SIZE;
+                }
+            }
+        }
+    }
+}
+
 // Block functions end
 
 // Pushable block functions start
@@ -328,7 +351,7 @@ PushableBlock::PushableBlock(float x, float y, float w, float h) {
     originalY=y;
 }
 
-void PushableBlock::update(vector<Block> &platformBlocks, const SDL_FRect &playerHitbox,
+void PushableBlock::update(std::vector<Block> &platformBlocks, const SDL_FRect &playerHitbox,
                            bool moveLeft, bool moveRight, bool &dead, double deltaTime) {
 
     checkPush(platformBlocks, playerHitbox, moveLeft, moveRight, deltaTime);
@@ -336,7 +359,7 @@ void PushableBlock::update(vector<Block> &platformBlocks, const SDL_FRect &playe
     checkKill(playerHitbox, dead);
 }
 
-void PushableBlock::applyPhysics(vector<Block> &platformBlocks, double deltaTime) {
+void PushableBlock::applyPhysics(std::vector<Block> &platformBlocks, double deltaTime) {
     velY+=GRAVITY*deltaTime;
     if (velY>TERMINAL_VELOCITY) velY=TERMINAL_VELOCITY;
 
@@ -392,7 +415,7 @@ bool PushableBlock::checkYCollision(double playerX, double &playerY, double &nex
     return collided;
 }
 
-void PushableBlock::checkPush(vector<Block> &platformBlocks, const SDL_FRect &playerHitbox, bool moveLeft, bool moveRight, double deltaTime) {
+void PushableBlock::checkPush(std::vector<Block> &platformBlocks, const SDL_FRect &playerHitbox, bool moveLeft, bool moveRight, double deltaTime) {
     touchingLeft=(playerHitbox.x+playerHitbox.w>hitbox.x &&
                   playerHitbox.x<hitbox.x &&
                   playerHitbox.y+playerHitbox.h>hitbox.y &&
@@ -454,7 +477,7 @@ SDL_FRect PushableBlock::getHitbox() const {
 
 // Spike functions start
 
-Spike::Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const string &type) {
+Spike::Spike(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type) {
     hitbox={x, y, w, h};
     angle=a;
     mirror=m;
@@ -471,7 +494,7 @@ bool Spike::checkCollision(double playerX, double playerY, int PLAYER_WIDTH, int
 const SDL_FRect &Spike::getHitbox() const {
     return hitbox;
 }
-const string &Spike::getType() const {
+const std::string &Spike::getType() const {
     return spikeType;
 }
 void Spike::movingSpike(double deltaTime) {
@@ -523,7 +546,7 @@ void JumpOrb::updateRotation(double deltaTime) const {
 
 // Jump pad functions start
 
-JumpPad::JumpPad(float x, float y, float w, float h, double a, const string &type) {
+JumpPad::JumpPad(float x, float y, float w, float h, double a, const std::string &type) {
     hitbox={x, y, w, h};
     angle=a;
     padType=type;

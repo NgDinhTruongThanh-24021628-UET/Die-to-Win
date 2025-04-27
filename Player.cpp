@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <cmath>
 #include "Player.h"
 #include "Texture.h"
@@ -8,6 +9,7 @@
 
 extern SDL_Renderer *gRenderer;
 extern LTexture cubeTexture;
+extern Mix_Music *fnafSong;
 
 // Constructor
 Player::Player() {
@@ -71,12 +73,10 @@ void Player::handleEvent(SDL_Event &e) {
         case SDLK_LEFT:
         case SDLK_a:
             moveLeft=true;
-            std::cout << "pressing left" << std::endl;
             break;
         case SDLK_RIGHT:
         case SDLK_d:
             moveRight=true;
-            std::cout << "pressing right" << std::endl;
             break;
         case SDLK_SPACE:
         case SDLK_UP:
@@ -243,7 +243,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
             if (!isDashing) mVelY=0.0;
             if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
                                                   blocks, pushableBlocks, spikes, levelName, deltaTime,
-                                                  timeStopped, timeStopTimer);
+                                                  timeStopped, timeStopTimer, powerPercent);
         }
     }
     forcePushIntoGap(blocks);
@@ -359,44 +359,72 @@ void Player::findClosestRectSPad(JumpPad pad, std::vector<Block> &blocks, std::v
 
 // Jump orb and jump pad interactions
 void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &dead) {
+                      std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, const std::string &levelName, double deltaTime, bool &dead) {
 
     // Idle tycoon
-    income+=passiveIncome*deltaTime;
-    if (income>=passiveIncome) {
-        totalMoney+=passiveIncome;
-        income=0;
-    }
-    if (totalMoney>1000000) {
-        for (auto &spike : spikes) {
-            if (!spike.unlocked) {
-                spike.unlocked=true;
-                spike.realX=SCREEN_WIDTH-TILE_SIZE*8-TILE_SIZE*7/18.0f+TILE_SIZE*2/5.0f;
-                spike.realY=SCREEN_HEIGHT-TILE_SIZE*3-TILE_SIZE/2.0f+TILE_SIZE*3/10.0f;
+    if (levelName=="Cookies") {
+        income+=passiveIncome*deltaTime;
+        if (income>=passiveIncome) {
+            totalMoney+=passiveIncome;
+            income=0;
+        }
+        if (totalMoney>1000000) {
+            for (auto &spike : spikes) {
+                if (!spike.unlocked) {
+                    spike.unlocked=true;
+                    spike.realX=SCREEN_WIDTH-TILE_SIZE*8-TILE_SIZE*7/18.0f+TILE_SIZE*2/5.0f;
+                    spike.realY=SCREEN_HEIGHT-TILE_SIZE*3-TILE_SIZE/2.0f+TILE_SIZE*3/10.0f;
+                }
             }
         }
     }
 
     // Time stop
-    if (timeStopped) {
-        SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 80);
-        SDL_FRect timeStopOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
-        SDL_RenderFillRectF(gRenderer, &timeStopOverlay);
+    else if (levelName=="Illusion World") {
+        if (timeStopped) {
+            SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 80);
+            SDL_FRect timeStopOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
+            SDL_RenderFillRectF(gRenderer, &timeStopOverlay);
 
-        timeStopTimer-=deltaTime;
-        if (timeStopTimer<0) {
-            timeStopped=false;
-            timeStopTimer=0;
-        }
-    }
-    if (!timeStopped) {
-        for (auto &block : pushableBlocks) {
-            if (block.resetQueued) {
-                block.resetQueued=false;
-                block.resetPosition();
+            timeStopTimer-=deltaTime;
+            if (timeStopTimer<0) {
+                timeStopped=false;
+                timeStopTimer=0;
             }
         }
+        else {
+            for (auto &block : pushableBlocks) {
+                if (block.resetQueued) {
+                    block.resetQueued=false;
+                    block.resetPosition();
+                }
+            }
+        }
+    }
+
+    // Fnaf puzzle
+    else if (levelName=="Five Nights") {
+        if (!powerOut) {
+            drain+=drainRate*deltaTime;
+            if (drain>=drainRate) {
+                powerPercent-=drainRate;
+                drain=0;
+            }
+        }
+        if (powerPercent==0) {
+            powerOut=true;
+
+            SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 240);
+            SDL_FRect fnafOverlay={0, 0, static_cast<float>(SCREEN_WIDTH), static_cast<float>(SCREEN_HEIGHT)};
+            SDL_RenderFillRectF(gRenderer, &fnafOverlay);
+        }
+        if (powerOut && !diedFromPowerOut) {
+            Mix_PlayMusic(fnafSong, 0);
+            diedFromPowerOut=true;
+        }
+        if (!Mix_PlayingMusic()) dead=true;
     }
 
     // Orb interactions

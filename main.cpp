@@ -66,6 +66,7 @@ SDL_Rect padClips[NUMBER_OF_PADS];
 
 // Music + SFX
 Mix_Music *gameThemeSong=nullptr;
+Mix_Music *fnafSong=nullptr;
 Mix_Chunk *deathSound=nullptr;
 
 // Initialize
@@ -287,6 +288,11 @@ bool loadMedia() {
         cout << "Failed to load game theme song. " << Mix_GetError() << endl;
         success=false;
     }
+    fnafSong=Mix_LoadMUS("Resources/FNAF Song.mp3");
+    if (fnafSong==nullptr) {
+        cout << "Failed to load level song. " << Mix_GetError() << endl;
+        success=false;
+    }
     deathSound=Mix_LoadWAV("Resources/Death Sound.mp3");
     if (deathSound==nullptr) {
         cout << "Failed to load death sound effect. " << Mix_GetError() << endl;
@@ -300,6 +306,8 @@ void close() {
     // Deal with music + SFX
     Mix_FreeMusic(gameThemeSong);
     gameThemeSong=nullptr;
+    Mix_FreeMusic(fnafSong);
+    fnafSong=nullptr;
     Mix_FreeChunk(deathSound);
     deathSound=nullptr;
 
@@ -342,7 +350,14 @@ void close() {
     SDL_Quit();
 }
 
-bool uniqueDigits=true;
+void offsetPosition(vector<Block> &blocks, const string &levelName) {
+    if (levelName=="Tic Tac Toe") {
+        for (auto &block : blocks) {
+            if (block.getType()=="1XM") block.offsetPosition(TILE_SIZE/2, 0);
+        }
+    }
+}
+
 void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentStatus, GameSetting currentSetting,
                         const string &levelName, const int &levelIndex) {
 
@@ -428,7 +443,7 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                     instructionTexture[40].render(block.getHitbox().x+(block.getHitbox().w-instructionTexture[40].getWidth())/2,
                                                   block.getHitbox().y+(block.getHitbox().h-instructionTexture[40].getHeight())/2);
                 }
-                if (!uniqueDigits) {
+                if (!uniqueDigitsInPassword) {
                     instructionTexture[41].setTextOnce("Password should contain 4 different digits", textColor, gMediumFont);
                     instructionTexture[41].render((SCREEN_WIDTH-instructionTexture[41].getWidth())/2, SCREEN_HEIGHT/2);
                 }
@@ -442,15 +457,25 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                 instructionTexture[45].render((SCREEN_WIDTH-instructionTexture[45].getWidth())/2, (SCREEN_HEIGHT-instructionTexture[45].getHeight())/2);
             }
         }
+
+        else if (levelName=="Five Nights") {
+            for (const Block &block : blocks) {
+                if (block.getType()=="1PL") {
+                    instructionTexture[46].loadFromRenderedText(to_string(cube.powerPercent)+" %", textColor, gMediumFont);
+                    instructionTexture[46].render(TILE_SIZE/2+block.getHitbox().x+(block.getHitbox().w-instructionTexture[46].getWidth())/2,
+                                                  block.getHitbox().y+(block.getHitbox().h-instructionTexture[46].getHeight())/2);
+                }
+            }
+        }
     }
 }
 
-const int ALL_LEVELS=14;
+const int ALL_LEVELS=15;
 string levelName[ALL_LEVELS]={"The Hub",
                               "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error", "Dash",
                               "Labyrinth", "Enigma", "Move to Die", "Cookies", "Illusion World", "Five Nights",
-                              "Vertigo"};
-static int levelIndex=13;
+                              "Tic Tac Toe" ,"Vertigo"};
+static int levelIndex=12;
 
 int main(int argc, char *argv[]) {
     if (!init()) {
@@ -573,6 +598,7 @@ int main(int argc, char *argv[]) {
                     Mix_PlayMusic(gameThemeSong, -1);
                     cube.reset();
                     loadLevel("Resources/Levels/"+levelName[levelIndex]+".txt", blocks, pushableBlocks, spikes, jumpOrbs, jumpPads);
+                    offsetPosition(blocks, levelName[levelIndex]);
                     fadeAlpha=0;
                     currentStatus=PLAYING;
                 }
@@ -581,7 +607,7 @@ int main(int argc, char *argv[]) {
                 if (currentStatus==PLAYING) {
                     // Handle player interactions
                     cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
-                    cube.interact(blocks, pushableBlocks, spikes, jumpOrbs, jumpPads, deltaTime, dead);
+                    cube.interact(blocks, pushableBlocks, spikes, jumpOrbs, jumpPads, levelName[levelIndex], deltaTime, dead);
                     for (auto &block : pushableBlocks) {
                         if (!cube.timeStopped) block.update(blocks, cube.getHitbox(), cube.moveLeft, cube.moveRight, dead, deltaTime);
                     }

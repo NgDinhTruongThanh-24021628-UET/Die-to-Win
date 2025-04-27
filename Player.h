@@ -51,7 +51,7 @@ public:
 
     // Jump orb and jump pad interactions
     void interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                  std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, double deltaTime, bool &quit);
+                  std::vector<JumpOrb> &jumpOrbs, std::vector<JumpPad> &jumpPads, const std::string &levelName, double deltaTime, bool &quit);
 
     // Render player to window
     void render();
@@ -69,14 +69,21 @@ public:
     unsigned long long getTotalMoney();
     int getGainPerHit();
     int getPassiveIncome();
-    double income;
+    double income=0;
 
     // Check if player is moving left or right
     bool moveLeft, moveRight;
 
     // Stop time (op ability wth)
-    bool timeStopped;
+    bool timeStopped=false;
     double timeStopTimer=0;
+
+    // Fnaf puzzle
+    int powerPercent=100;
+    const int drainRate=1;
+    double drain=0;
+    bool powerOut=false;
+    bool diedFromPowerOut=false;
 
 private:
     // Player X/Y positions
