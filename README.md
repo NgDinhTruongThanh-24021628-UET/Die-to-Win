@@ -3,10 +3,16 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
-### v0.6
-- New feature - Dash Orb: Click and hold to dash
+### v0.65
+- Added 1 new level + music for the level
 
+Level "Five Nights" showcase (Interactive block: Battery power):
+
+https://github.com/user-attachments/assets/33f54d3c-d7d9-4a63-8be7-884c231c9601
+
+### v0.6
 - Added 2 new levels
+- New game feature - Dash Orb: Click and hold to dash
 
 Level "Vertigo" showcase (Dash Orb + reverse inputs):
 
@@ -16,23 +22,25 @@ https://github.com/user-attachments/assets/f9d5165f-09d6-4903-99b3-c10682f00e92
 - Added 1 new level
 - Added game credits
   
-Level "Illusion World" showcase (Pushable block + time freeze):
+Level "Illusion World" showcase (Pushable block + Interactive block: Time freeze):
 
 https://github.com/user-attachments/assets/e3ef0cb3-086a-43ed-ac86-a20510ddfa5e
 
 ### v0.4
 - Added 1 new level
+- New game feature - Pushable block: A new block that can be pushed by player and affected by gravity
 - Added game theme song and death SFX
 
 ### v0.3
 - Added 1 new level
-  
+
 Level "Cookies" showcase (Idle clicker simulator):
 
 https://github.com/user-attachments/assets/c57b1da4-bb60-4aec-9b76-770b2d3a134c
 
 ### v0.2
 - Added 2 new levels
+- New game feature - Interactive blocks: Different levels and block types will cause different events
 
 Level "Enigma" showcase (Password guessing):
 
