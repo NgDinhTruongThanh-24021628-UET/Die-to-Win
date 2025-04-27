@@ -54,6 +54,8 @@ SDL_Color bgColor[BG_TOTAL_COLOR]={
 Background selectedBG=BLANK;
 LTexture backgroundTexture[TOTAL_BG];
 
+LTexture toBeContinued;
+
 // Texture clipping
 const int NUMBER_OF_BLOCKS=31;
 const int NUMBER_OF_SPIKES=3;
@@ -67,6 +69,7 @@ SDL_Rect padClips[NUMBER_OF_PADS];
 // Music + SFX
 Mix_Music *gameThemeSong=nullptr;
 Mix_Music *fnafSong=nullptr;
+Mix_Music *jojoSong=nullptr;
 Mix_Chunk *deathSound=nullptr;
 
 // Initialize
@@ -286,13 +289,19 @@ bool loadMedia() {
         success=false;
     }
 
+    if (!toBeContinued.loadFromFile("Resources/To Be Continued.png")) {
+        cout << "Failed to load meme arrow texture." << endl;
+        success=false;
+    }
+
     gameThemeSong=Mix_LoadMUS("Resources/Game Theme.ogg");
     if (gameThemeSong==nullptr) {
         cout << "Failed to load game theme song. " << Mix_GetError() << endl;
         success=false;
     }
     fnafSong=Mix_LoadMUS("Resources/FNAF Song.mp3");
-    if (fnafSong==nullptr) {
+    jojoSong=Mix_LoadMUS("Resources/Roundabout.mp3");
+    if (fnafSong==nullptr || jojoSong==nullptr) {
         cout << "Failed to load level song. " << Mix_GetError() << endl;
         success=false;
     }
@@ -311,6 +320,8 @@ void close() {
     gameThemeSong=nullptr;
     Mix_FreeMusic(fnafSong);
     fnafSong=nullptr;
+    Mix_FreeMusic(jojoSong);
+    jojoSong=nullptr;
     Mix_FreeChunk(deathSound);
     deathSound=nullptr;
 
@@ -318,6 +329,7 @@ void close() {
     blockSheetTexture.free();
     orbPadSheetTexture.free();
     cubeTexture.free();
+    toBeContinued.free();
     for (int i=0; i<TOTAL_BG; i++) {
         backgroundTexture[i].free();
     }
@@ -623,7 +635,7 @@ int main(int argc, char *argv[]) {
                 // Playing
                 if (currentStatus==PLAYING) {
                     // Handle player interactions
-                    cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
+                    if (!cube.levelFreeze) cube.move(blocks, pushableBlocks, spikes, jumpOrbs, currentStatus, levelName[levelIndex], deltaTime);
                     cube.interact(blocks, pushableBlocks, spikes, jumpOrbs, jumpPads, levelName[levelIndex], deltaTime, dead);
                     for (auto &block : pushableBlocks) {
                         if (!cube.timeStopped) block.update(blocks, cube.getHitbox(), cube.moveLeft, cube.moveRight, dead, deltaTime);

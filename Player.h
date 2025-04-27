@@ -85,6 +85,11 @@ public:
     bool powerOut=false;
     bool diedFromPowerOut=false;
 
+    // Jojo reference
+    bool cutscenePlaying=false;
+    bool roundaboutPlaying=false;
+    bool levelFreeze=false;
+
 private:
     // Player X/Y positions
     double mPosX, mPosY;

@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1745768638 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745784852 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -16,13 +16,13 @@
 	"LoadLevel.h"
 	"Rendering.h"
 
-1745717012 c:\users\truong thanh\documents\sdl projects\die to win\player.h
+1745782780 c:\users\truong thanh\documents\sdl projects\die to win\player.h
 	<vector>
 	<SDL.h>
 	"LevelObjs.h"
 	"Enums.h"
 
-1745770719 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745785095 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<SDL_mixer.h>
@@ -71,13 +71,13 @@
 	<iostream>
 	<SDL.h>
 
-1745769275 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745785381 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 	"Enums.h"
 
-1745770705 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745785339 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<string>
 	<vector>
@@ -95,7 +95,7 @@
 
 1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
 
-1745334592 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
+1745780186 c:\users\truong thanh\documents\sdl projects\die to win\enums.h
 
 1745671895 c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.h
 	<string>
@@ -103,7 +103,7 @@
 	<unordered_map>
 	"LevelObjs.h"
 
-1745768638 source:c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.cpp
+1745783208 source:c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -112,7 +112,7 @@
 	"LevelObjs.h"
 	"LoadLevel.h"
 
-1745770418 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
+1745784438 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
 	<string>
 	<vector>
 	<SDL.h>

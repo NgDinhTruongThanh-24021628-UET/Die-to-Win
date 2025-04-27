@@ -9,7 +9,9 @@
 
 extern SDL_Renderer *gRenderer;
 extern LTexture cubeTexture;
+extern LTexture toBeContinued;
 extern Mix_Music *fnafSong;
+extern Mix_Music *jojoSong;
 
 // Constructor
 Player::Player() {
@@ -205,10 +207,9 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
     for (auto &block : blocks) {
         if (block.checkXCollision(mPosX, mPosY, nextPosX, mVelX, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             mVelX=0.0;
-            //std::cout << "colliding with " << block.getType() << std::endl;
             if (block.getType()=="1WVI") block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
                                                   blocks, pushableBlocks, spikes, levelName, deltaTime,
-                                                  timeStopped, timeStopTimer, powerPercent);
+                                                  timeStopped, timeStopTimer, powerPercent, cutscenePlaying);
         }
     }
     for (auto &block : pushableBlocks) {
@@ -247,7 +248,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
             if (!isDashing) mVelY=0.0;
             if (onPlatform==false) block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
                                                   blocks, pushableBlocks, spikes, levelName, deltaTime,
-                                                  timeStopped, timeStopTimer, powerPercent);
+                                                  timeStopped, timeStopTimer, powerPercent, cutscenePlaying);
         }
     }
     forcePushIntoGap(blocks);
@@ -280,6 +281,7 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
     if (!isJumpHeld) {
         canJump=true;
     }
+    if (cutscenePlaying) canJump=false;
 
     // Update position
     mPosY=nextPosY;
@@ -431,6 +433,32 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
         if (!Mix_PlayingMusic()) dead=true;
     }
 
+    // Jojo reference
+    else if (levelName=="Star on Shoulder") {
+        if (cutscenePlaying && !roundaboutPlaying) {
+            Mix_PlayMusic(jojoSong, 0);
+            roundaboutPlaying=true;
+        }
+        levelFreeze=false;
+        for (const auto &block : blocks) {
+            if (block.getType()=="3ADM" && block.getHitbox().y>SCREEN_HEIGHT-3*TILE_SIZE) {
+                if (Mix_PlayingMusic()) levelFreeze=true;
+            }
+        }
+        if (levelFreeze) {
+            SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(gRenderer, 211, 211, 211, 80);
+            SDL_FRect cutsceneOverlay={TILE_SIZE*7/18, TILE_SIZE/2, SCREEN_WIDTH-TILE_SIZE*14/18, SCREEN_HEIGHT-TILE_SIZE};
+            SDL_RenderFillRectF(gRenderer, &cutsceneOverlay);
+
+            toBeContinued.render(0, SCREEN_HEIGHT-toBeContinued.getHeight());
+        }
+        if (!Mix_PlayingMusic()) {
+            cutscenePlaying=false;
+            levelFreeze=false;
+        }
+    }
+
     // Orb interactions
     for (auto &orb : jumpOrbs) {
         if (orb.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT) && isJumpHeld && canJump) {
@@ -500,15 +528,17 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
 
     // Spike collision
     for (auto &spike : spikes) {
-        spike.movingSpike(deltaTime);
+        if (!levelFreeze) spike.movingSpike(deltaTime);
         if (spike.checkCollision(mPosX, mPosY, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             dead=true;
         }
     }
 
     for (auto &block : blocks) {
-        if (block.getType()=="1Y") block.movingBlockX(deltaTime);
-        else block.movingBlockY(deltaTime);
+        if (!levelFreeze) {
+            if (block.getType()=="1Y") block.movingBlockX(deltaTime);
+            else block.movingBlockY(deltaTime);
+        }
     }
 }
 

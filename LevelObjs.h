@@ -48,7 +48,7 @@ public:
     bool isInteractable() const;
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                   std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                  const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent);
+                  const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent, bool &cutscenePlaying);
 
     // Helper functions for each level
     void interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
@@ -57,6 +57,7 @@ public:
     void interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer);
     void interactFiveNights(std::vector<Block> &blocks, int &powerPercent);
     void interactTicTacToe(std::vector<Block> &blocks, std::vector<Spike> &spikes);
+    void interactJojo(std::vector<Block> &blocks, std::vector<Spike> &spikes, bool &cutscenePlaying);
 
     // For rendering blocks
     double angle;
@@ -128,7 +129,9 @@ public:
 
     const SDL_FRect &getHitbox() const;
     const std::string &getType() const;
+
     void movingSpike(double deltaTime);
+    void changeSpeed(float change);
 
     double angle;
     SDL_RendererFlip mirror;
