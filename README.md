@@ -67,7 +67,7 @@ https://github.com/user-attachments/assets/f9d5165f-09d6-4903-99b3-c10682f00e92
 - Added 1 new level
 - Added game credits
   
-Level "Illusion World" showcase (Pushable block + Interactive block: Time freeze):
+Level "Illusion World" showcase (Pushable block + Interactable block: Time freeze):
 
 https://github.com/user-attachments/assets/e3ef0cb3-086a-43ed-ac86-a20510ddfa5e
 
@@ -89,7 +89,7 @@ Do you know the reference?
 
 ### v0.2
 - Added 2 new levels
-- New game feature - Interactive blocks: Different levels and block types will cause different events
+- New game feature - Interactable blocks: Different levels and block types will cause different events
 
 Level "Enigma" showcase (Password guessing):
 
