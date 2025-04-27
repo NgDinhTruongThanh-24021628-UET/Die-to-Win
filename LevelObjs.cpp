@@ -28,34 +28,48 @@ Block::Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, c
     mirror=m;
 }
 
+// Updated to account for moving blocks
 bool Block::checkXCollision(double &playerX, double playerY, double &nextPlayerX,
                             double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const {
     if (blockType[1]=='J') return false;
 
     bool collided=false;
 
-    // From left side
-    if (playerX+PLAYER_WIDTH<=hitbox.x &&
-        nextPlayerX+PLAYER_WIDTH>=hitbox.x && // If player will go through platform
-        playerY+PLAYER_HEIGHT>hitbox.y &&
-        playerY<hitbox.y+hitbox.h) { // And will collide with platform
+    // Predict player's next position
+    double nextLeft=nextPlayerX;
+    double nextRight=nextPlayerX+PLAYER_WIDTH;
+    double nextTop=playerY;
+    double nextBottom=playerY+PLAYER_HEIGHT;
 
-        nextPlayerX=hitbox.x-PLAYER_WIDTH;
-        collided=true;
-    }
+    // Predict block's next position
+    double blockLeft=hitbox.x;
+    double blockRight=hitbox.x+hitbox.w;
+    double blockTop=hitbox.y;
+    double blockBottom=hitbox.y+hitbox.h;
 
-    // From right side
-    if (playerX>=hitbox.x+hitbox.w &&
-        nextPlayerX<=hitbox.x+hitbox.w && // If player will go through platform
-        playerY+PLAYER_HEIGHT>hitbox.y &&
-        playerY<hitbox.y+hitbox.h) { // And will collide with platform
-
-        nextPlayerX=hitbox.x+hitbox.w;
+    // If player and block hitbox overlap
+    if (nextRight>blockLeft && nextLeft<blockRight && nextBottom>blockTop && nextTop<blockBottom) {
+        // Set player position
+        if (playerVelX>0) { // Player moving right
+            nextPlayerX=blockLeft-PLAYER_WIDTH;
+        }
+        else if (playerVelX<0) { // Player moving left
+            nextPlayerX=blockRight;
+        }
+        else { // Player standing still
+            if (playerX+PLAYER_WIDTH/2<blockLeft+hitbox.w/2) { // Left side of block
+                nextPlayerX=blockLeft-PLAYER_WIDTH;
+            }
+            else { // Right side of block
+                nextPlayerX=blockRight;
+            }
+        }
         collided=true;
     }
 
     return collided;
 }
+
 
 bool Block::checkYCollision(double playerX, double &playerY, double &nextPlayerY,
                             double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT,
@@ -157,7 +171,7 @@ bool Block::isInteractable() const {
 }
 void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                      std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
-                     const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent) {
+                     const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent, bool &cutscenePlaying) {
     if (!isInteractable()) return;
     if (blockType=="1S") {
         currentStatus=SETTINGS;
@@ -183,7 +197,9 @@ void Block::interact(unsigned long long &totalMoney, int &gainPerHit, int &passi
     else if (levelName=="Tic Tac Toe") {
         interactTicTacToe(blocks, spikes);
     }
-
+    else if (levelName=="Star on Shoulder") {
+        interactJojo(blocks, spikes, cutscenePlaying);
+    }
 }
 
 // Helper function for level: Cookies
@@ -595,6 +611,102 @@ void Block::interactTicTacToe(std::vector<Block> &blocks, std::vector<Spike> &sp
     }
 }
 
+// Helper function for level: Star on Shoulder
+void Block::interactJojo(std::vector<Block> &blocks, std::vector<Spike> &spikes, bool &cutscenePlaying) {
+    bool blocksAddedAlready=false;
+    for (const auto &block : blocks) {
+        if (block.getType()=="1Y") {
+            blocksAddedAlready=true;
+            break;
+        }
+    }
+    if (!blocksAddedAlready) {
+        for (int i=0; i<4; i++) {
+            blocks.emplace_back(-TILE_SIZE, i*160, TILE_SIZE, TILE_SIZE, 0, SDL_FLIP_NONE, "1Y");
+        }
+        for (int i=0; i<4; i++) {
+            blocks.emplace_back(SCREEN_WIDTH, i*160, TILE_SIZE, TILE_SIZE, 0, SDL_FLIP_NONE, "1Y");
+        }
+        blocks.emplace_back(TILE_SIZE, -48000, TILE_SIZE, TILE_SIZE, 180, SDL_FLIP_HORIZONTAL, "3ADM");
+        blocks.emplace_back(2*TILE_SIZE, -48000, TILE_SIZE, TILE_SIZE, 180, SDL_FLIP_NONE, "3CD");
+        blocks.emplace_back(2*TILE_SIZE, -48000-TILE_SIZE, TILE_SIZE, TILE_SIZE, 180, SDL_FLIP_NONE, "1BY");
+        blocks.emplace_back(3*TILE_SIZE, -48000, TILE_SIZE, TILE_SIZE, 180, SDL_FLIP_NONE, "3AD");
+    }
+    if (spikes.empty()) {
+        spikes.emplace_back(TILE_SIZE*2/5+TILE_SIZE, TILE_SIZE-48000+TILE_SIZE/10, TILE_SIZE/5, TILE_SIZE/5, 180, SDL_FLIP_HORIZONTAL, "2ADM");
+        spikes.emplace_back(TILE_SIZE*2/5+TILE_SIZE*2, TILE_SIZE-48000+TILE_SIZE/10, TILE_SIZE/5, TILE_SIZE/5, 180, SDL_FLIP_NONE, "2CD");
+        spikes.emplace_back(TILE_SIZE*2/5+TILE_SIZE*3, TILE_SIZE-48000+TILE_SIZE/10, TILE_SIZE/5, TILE_SIZE/5, 180, SDL_FLIP_NONE, "2AD");
+    }
+    if (blockType=="1WVI") {
+        int leftSide=0, rightSide=0;
+        for (auto &block : blocks) {
+            if (block.getType()=="1Y" && !block.unlocked && leftSide<4 && block.realX==-TILE_SIZE) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+7*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-(TILE_SIZE/2+(leftSide+1)*TILE_SIZE);
+                block.changeSpeed(0.2);
+                leftSide++;
+            }
+        }
+        for (auto &block : blocks) {
+            if (block.getType()=="1Y" && !block.unlocked && rightSide<4 && block.realX==SCREEN_WIDTH) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+9*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-(TILE_SIZE/2+(rightSide+1)*TILE_SIZE);
+                block.changeSpeed(0.2);
+                rightSide++;
+            }
+        }
+        for (auto &block : blocks) {
+            if (block.getType()=="3ADM" && !block.unlocked) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+7*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-2*TILE_SIZE;
+                block.changeSpeed(10);
+            }
+            else if (block.getType()=="3CD" && !block.unlocked) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+8*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-2*TILE_SIZE;
+                block.changeSpeed(10);
+            }
+            else if (block.getType()=="1BY" && !block.unlocked) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+8*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-3*TILE_SIZE;
+                block.changeSpeed(10);
+            }
+            else if (block.getType()=="3AD" && !block.unlocked) {
+                block.unlocked=true;
+                block.realX=TILE_SIZE*7/18+9*TILE_SIZE;
+                block.realY=SCREEN_HEIGHT-2*TILE_SIZE;
+                block.changeSpeed(10);
+            }
+        }
+        for (auto &spike : spikes) {
+            if (spike.getType()=="2ADM" && !spike.unlocked) {
+                spike.unlocked=true;
+                spike.realX=TILE_SIZE*7/18+7*TILE_SIZE+TILE_SIZE*2/5;
+                spike.realY=SCREEN_HEIGHT-TILE_SIZE+TILE_SIZE/10;
+                spike.changeSpeed(10);
+            }
+            else if (spike.getType()=="2CD" && !spike.unlocked) {
+                spike.unlocked=true;
+                spike.realX=TILE_SIZE*7/18+8*TILE_SIZE+TILE_SIZE*2/5;
+                spike.realY=SCREEN_HEIGHT-TILE_SIZE+TILE_SIZE/10;
+                spike.changeSpeed(10);
+            }
+            else if (spike.getType()=="2AD" && !spike.unlocked) {
+                spike.unlocked=true;
+                spike.realX=TILE_SIZE*7/18+9*TILE_SIZE+TILE_SIZE*2/5;
+                spike.realY=SCREEN_HEIGHT-TILE_SIZE+TILE_SIZE/10;
+                spike.changeSpeed(10);
+            }
+        }
+        cutscenePlaying=true;
+    }
+}
+
 /// Block functions end
 
 /// Pushable block functions start
@@ -767,6 +879,9 @@ void Spike::movingSpike(double deltaTime) {
             hitbox.y+=dy/distance*moveStep;
         }
     }
+}
+void Spike::changeSpeed(float change) {
+    speed*=change;
 }
 
 /// Spike functions end

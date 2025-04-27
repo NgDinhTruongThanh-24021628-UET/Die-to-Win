@@ -44,6 +44,7 @@ std::unordered_map<std::string, BlockInfo> blockLookup={
     {"1BI", {5, 0, SDL_FLIP_NONE}},     // All border block (interactable)
     {"1BG", {5, 0, SDL_FLIP_NONE}},     // All border block (green)
     {"1BO", {5, 0, SDL_FLIP_NONE}},     // All border block (orange)
+    {"1BY", {5, 0, SDL_FLIP_NONE}},     // All border block (dio)
 
     {"1I1", {6, 0, SDL_FLIP_NONE}},     // Idle tycoon block 1 - misc upgrade
     {"1I2", {7, 0, SDL_FLIP_NONE}},     // Idle tycoon block 2 - lower the point block

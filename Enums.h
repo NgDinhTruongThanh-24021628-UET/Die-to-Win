@@ -19,6 +19,7 @@ enum GameStatus {
     MENU=0,
     START,
     PLAYING,
+    PAUSED,
     SETTINGS,
     CREDITS,
     WIN,

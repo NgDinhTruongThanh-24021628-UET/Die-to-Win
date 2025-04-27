@@ -3,6 +3,16 @@ A platformer where you have to die to progress
 Requires Code::Blocks v20.03 to run as of right now
 
 ## Update history
+### v0.99
+- Added 1 new level + music
+- Updated block collision function
+
+Level "Star on Shoulder" showcase:
+
+https://github.com/user-attachments/assets/a005b641-fc66-4b46-bd30-74f07dde7c0a
+
+Do you know the reference?
+
 ### v0.7
 - Added 1 new level
 - New game feature: Tic Tac Toe "AI" (more like pure random)
