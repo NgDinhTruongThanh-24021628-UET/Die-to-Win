@@ -401,7 +401,7 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                 gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
             }
             if (block.getType()=="1K2") {
-                instructionTexture[30].setTextOnce("v0.7 ", textColor, gSmallFont);
+                instructionTexture[30].setTextOnce("v1.0 ", textColor, gSmallFont);
                 instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
                                                block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
             }
@@ -496,6 +496,10 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                 instructionTexture[47].render((SCREEN_WIDTH-instructionTexture[47].getWidth())/2, TILE_SIZE/2);
             }
         }
+        else if (levelName=="The End") {
+            instructionTexture[60].setTextOnce("Thank you for playing!", textColor, gLargeFont);
+            instructionTexture[60].render((SCREEN_WIDTH-instructionTexture[60].getWidth())/2, TILE_SIZE/2);
+        }
     }
 }
 
@@ -504,7 +508,7 @@ string levelName[ALL_LEVELS]={"The Hub",
                               "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error", "Dash",
                               "Labyrinth", "Star on Shoulder", "Enigma", "Move to Die", "Cookies", "Illusion World", "Five Nights",
                               "Tic Tac Toe", "Vertigo", "The End"};
-static int levelIndex=8;
+static int levelIndex=1;
 
 int main(int argc, char *argv[]) {
     if (!init()) {

@@ -1,8 +1,32 @@
-# Die-to-Win
-A platformer where you have to die to progress  
-Requires Code::Blocks v20.03 to run as of right now
+## !!NOTICE!!
+- From 28/04/2025 onwards Die to Win will be updated on a seperate branch. The Main Branch will stay untouched until June.
+- For now I can't teach you how to download the game because I don't know. I apologize.
 
-## Update history
+Full v1.0 playthrough:
+https://youtu.be/6LkZd0_UVzc
+
+# Introduction
+![v1 0 playthrough - frame at 0m4s](https://github.com/user-attachments/assets/7e8963b9-394f-4c59-8953-58d94f764397)
+
+The fundamental objective of a platformer is to avoid death. But what if we flip that idea upside down? Imagine a platformer where your goal isn't to survive, but to crash into a spike. If that sounds like your kind of thing, then Die to Win is the game for you.
+
+# Features
+Play through 16 levels, each with its own gimmick. From password guessing to playing Tic-Tac-Toe against bot, the levels will always keep you engaged.
+
+Experience unique gameplay features such as Dash Orb - an orb that lets you dash through the level, Spider Pad - a pad that teleports you around, and many more.
+
+# Credits
+- Inspired by RobTopGames' Geometry Dash.
+- Most of the game's resources are taken from Geometry Dash, including textures and music.
+- Special thanks to GD Colon for making a website that splits Geometry Dash texture sheets into individual objects.
+- Special thanks to Lazy Foo Productions' SDL Tutorial for not only helping me learn SDL2 but also providing example code.
+- Special thanks to my lecturer, Mr. Lê Đức Trọng, for teaching me C++, SDL and providing some game ideas.
+- Special thanks to ChatGPT for the constant bug fixing it has to endure.
+
+# Update history
+### v1.0
+- Added new level: The End
+
 ### v0.99
 - Added 1 new level + music
 - Updated block collision function
