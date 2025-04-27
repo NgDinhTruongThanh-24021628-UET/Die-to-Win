@@ -27,6 +27,7 @@ std::unordered_map<std::string, BlockInfo> blockLookup={
 
     {"1WH", {1, 0, SDL_FLIP_NONE}},     // Horizontal wall
     {"1WV", {1, 90, SDL_FLIP_NONE}},    // Vertical wall
+    {"1WVI", {1, 90, SDL_FLIP_NONE}},   // Vertical wall (interactable)
 
     {"1TL", {2, 0, SDL_FLIP_NONE}},     // T-block left
     {"1TU", {2, 90, SDL_FLIP_NONE}},    // T-block up
@@ -80,6 +81,8 @@ std::unordered_map<std::string, BlockInfo> blockLookup={
     {"1JL", {28, 0, SDL_FLIP_NONE}},        // Jump-through platform attached to left wall
     {"1JR", {28, 0, SDL_FLIP_HORIZONTAL}},  // Jump-through platform attached to right wall
     {"1J", {29, 0, SDL_FLIP_NONE}},         // Jump-through platform in the air
+
+    {"1Y", {30, 0, SDL_FLIP_NONE}},     // Invisible block
 
 /***********************************************************************************************/
 

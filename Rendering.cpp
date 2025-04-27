@@ -113,7 +113,7 @@ void renderLevel(const std::vector<Block> &blocks, const std::vector<PushableBlo
                 SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 160);
                 SDL_RenderFillRectF(gRenderer, &block.getHitbox());
             }
-            if (type=="1BO") {
+            if (type=="1BO" || type=="1Y") {
                 SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
                 SDL_SetRenderDrawColor(gRenderer, 255, 102, 0, 160);
                 SDL_RenderFillRectF(gRenderer, &block.getHitbox());

@@ -55,7 +55,7 @@ Background selectedBG=BLANK;
 LTexture backgroundTexture[TOTAL_BG];
 
 // Texture clipping
-const int NUMBER_OF_BLOCKS=30;
+const int NUMBER_OF_BLOCKS=31;
 const int NUMBER_OF_SPIKES=3;
 const int NUMBER_OF_ORBS=4;
 const int NUMBER_OF_PADS=3;
@@ -253,6 +253,9 @@ bool loadMedia() {
         // Jump-through platforms
         blockClips[28]={1440, 160, 160, 160};
         blockClips[29]={1600, 160, 160, 160};
+
+        // Invisible block
+        blockClips[30]={1280, 320, 160, 160};
     }
 
     if (!cubeTexture.loadFromFile("Resources/Player.png")) {
@@ -386,7 +389,7 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                 gameTitleTexture.render(block.getHitbox().x+(9*TILE_SIZE-gameTitleTexture.getWidth())/2, block.getHitbox().y);
             }
             if (block.getType()=="1K2") {
-                instructionTexture[30].setTextOnce("v0.5 ", textColor, gSmallFont);
+                instructionTexture[30].setTextOnce("v0.7 ", textColor, gSmallFont);
                 instructionTexture[30].render(block.getHitbox().x+block.getHitbox().w-instructionTexture[30].getWidth(),
                                                block.getHitbox().y+block.getHitbox().h-instructionTexture[30].getHeight());
             }
@@ -467,15 +470,29 @@ void displayTextInLevel(Player cube, vector<Block> &blocks, GameStatus currentSt
                 }
             }
         }
+        else if (levelName=="Tic Tac Toe") {
+            if (playerWins) {
+                instructionTexture[47].setTextOnce("Player wins", textColor, gLargeFont);
+                instructionTexture[47].render((SCREEN_WIDTH-instructionTexture[47].getWidth())/2, TILE_SIZE/2);
+            }
+            else if (botWins) {
+                instructionTexture[47].setTextOnce("Bot wins", textColor, gLargeFont);
+                instructionTexture[47].render((SCREEN_WIDTH-instructionTexture[47].getWidth())/2, TILE_SIZE/2);
+            }
+            else if (stalemate) {
+                instructionTexture[47].setTextOnce("Draw", textColor, gLargeFont);
+                instructionTexture[47].render((SCREEN_WIDTH-instructionTexture[47].getWidth())/2, TILE_SIZE/2);
+            }
+        }
     }
 }
 
-const int ALL_LEVELS=15;
+const int ALL_LEVELS=17;
 string levelName[ALL_LEVELS]={"The Hub",
                               "Die to Win", "Getting Over It", "Geometry Jump", "VVVVVV", "Trial and Error", "Dash",
-                              "Labyrinth", "Enigma", "Move to Die", "Cookies", "Illusion World", "Five Nights",
-                              "Tic Tac Toe" ,"Vertigo"};
-static int levelIndex=12;
+                              "Labyrinth", "Star on Shoulder", "Enigma", "Move to Die", "Cookies", "Illusion World", "Five Nights",
+                              "Tic Tac Toe", "Vertigo", "The End"};
+static int levelIndex=8;
 
 int main(int argc, char *argv[]) {
     if (!init()) {

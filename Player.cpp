@@ -202,9 +202,13 @@ void Player::move(std::vector<Block> &blocks, std::vector<PushableBlock> &pushab
     double nextPosX=mPosX+mVelX*deltaTime;
 
     // Block collision detection (X axis)
-    for (const auto &block : blocks) {
+    for (auto &block : blocks) {
         if (block.checkXCollision(mPosX, mPosY, nextPosX, mVelX, PLAYER_WIDTH, PLAYER_HEIGHT)) {
             mVelX=0.0;
+            //std::cout << "colliding with " << block.getType() << std::endl;
+            if (block.getType()=="1WVI") block.interact(totalMoney, gainPerHit, passiveIncome, currentStatus,
+                                                  blocks, pushableBlocks, spikes, levelName, deltaTime,
+                                                  timeStopped, timeStopTimer, powerPercent);
         }
     }
     for (auto &block : pushableBlocks) {
@@ -503,7 +507,8 @@ void Player::interact(std::vector<Block> &blocks, std::vector<PushableBlock> &pu
     }
 
     for (auto &block : blocks) {
-        block.movingBlock(deltaTime);
+        if (block.getType()=="1Y") block.movingBlockX(deltaTime);
+        else block.movingBlockY(deltaTime);
     }
 }
 
