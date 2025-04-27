@@ -7,18 +7,23 @@
 
 extern const float TILE_SIZE;
 
-extern bool uniqueDigitsInPassword;
-
 class Block;
 class PushableBlock;
 class Spike;
 class JumpOrb;
 class JumpPad;
 
+extern bool uniqueDigitsInPassword;
+extern bool botWins;
+extern bool playerWins;
+extern bool stalemate;
+
 class Block {
 public:
+    // Constructor
     Block(float x, float y, float w, float h, double a, SDL_RendererFlip m, const std::string &type);
 
+    // Collision detection
     bool checkXCollision(double &playerX, double playerY, double &nextPlayerX,
                          double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT) const;
 
@@ -26,30 +31,43 @@ public:
                          double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT,
                          bool &onPlatform, bool &hitCeiling, bool reverseGravity) const;
 
+    // Get block hitbox
     const SDL_FRect &getHitbox() const;
-    const std::string &getType() const;
 
-    void movingBlock(double deltaTime);
+    // Get + change block type
+    const std::string &getType() const;
+    void switchType(std::string newType);
+
+    // Functions to change block's position
+    void movingBlockX(double deltaTime);
+    void movingBlockY(double deltaTime);
+    void changeSpeed(float change);
     void offsetPosition(float offsetX, float offsetY);
 
+    // Interactable blocks
     bool isInteractable() const;
     void interact(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome, GameStatus &currentStatus,
                   std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, std::vector<Spike> &spikes,
                   const std::string &levelName, double deltaTime, bool &timeStopped, double &timeStopTimer, int &powerPercent);
 
+    // Helper functions for each level
     void interactClicker(unsigned long long &totalMoney, int &gainPerHit, int &passiveIncome,
                          std::vector<Block> &blocks, std::vector<Spike> &spikes, double deltaTime);
     void interactEnigma(std::vector<Block> &blocks, std::vector<Spike> &spikes);
     void interactMoveToDie(std::vector<Block> &blocks, std::vector<PushableBlock> &pushableBlocks, bool &timeStopped, double &timeStopTimer);
     void interactFiveNights(std::vector<Block> &blocks, int &powerPercent);
+    void interactTicTacToe(std::vector<Block> &blocks, std::vector<Spike> &spikes);
 
+    // For rendering blocks
     double angle;
     SDL_RendererFlip mirror;
 
+    // For moving blocks
     bool unlocked=false;
     float realX, realY;
     float speed=300.0f;
 
+    // Internal values
     int counter=0;
     int value=5;
     int increment=5;
@@ -61,23 +79,29 @@ private:
 
 class PushableBlock {
 public:
+    // Constructor
     PushableBlock(float x, float y, float w, float h);
 
+    // Update pushable block every frame
     void update(std::vector<Block> &platformBlocks, const SDL_FRect &playerHitbox,
                 bool moveLeft, bool moveRight, bool &dead, double deltaTime);
 
+    // Functions in update() : apply gravity, check if being pushed, check if falling on player
     void applyPhysics(std::vector<Block> &platformBlocks, double deltaTime);
     void checkPush(std::vector<Block> &platformBlocks, const SDL_FRect &playerHitbox, bool moveLeft, bool moveRight, double deltaTime);
     void checkKill(const SDL_FRect &playerHitbox, bool &dead);
 
+    // Reset position
     void resetPosition();
+
+    // Get block hitbox
     SDL_FRect getHitbox() const;
 
-    bool checkXCollision(double &playerX, double playerY, double &nextPlayerX,
-                         double playerVelX, int PLAYER_WIDTH, int PLAYER_HEIGHT);
+    // Check Y collision (only for landing on block)
     bool checkYCollision(double playerX, double &playerY, double &nextPlayerY,
                          double playerVelY, int PLAYER_WIDTH, int PLAYER_HEIGHT, bool &onPlatform);
 
+    // Block physics
     double velX=0.0;
     double velY=0.0;
     double GRAVITY=6000.0;
@@ -85,8 +109,11 @@ public:
     double PUSH_SPEED=300.0;
     bool grounded=false;
     bool touchingLeft, touchingRight;
+
+    // For time stop level
     bool resetQueued=false;
 
+    // Save original position
     float originalX, originalY;
 
 private:

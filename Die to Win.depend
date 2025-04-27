@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1745728814 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
+1745768638 source:c:\users\truong thanh\documents\sdl projects\die to win\main.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -22,7 +22,7 @@
 	"LevelObjs.h"
 	"Enums.h"
 
-1745721434 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
+1745770719 source:c:\users\truong thanh\documents\sdl projects\die to win\player.cpp
 	<iostream>
 	<SDL.h>
 	<SDL_mixer.h>
@@ -71,17 +71,20 @@
 	<iostream>
 	<SDL.h>
 
-1745727218 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
+1745769275 c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.h
 	<iostream>
 	<SDL.h>
 	<vector>
 	"Enums.h"
 
-1745730366 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
+1745770705 source:c:\users\truong thanh\documents\sdl projects\die to win\levelobjs.cpp
 	<iostream>
 	<string>
 	<vector>
 	<cmath>
+	<algorithm>
+	<random>
+	<ctime>
 	<SDL.h>
 	<SDL_ttf.h>
 	<SDL_image.h>
@@ -89,9 +92,6 @@
 	"LevelObjs.h"
 	"Player.h"
 	"Enums.h"
-	<algorithm>
-	<random>
-	<ctime>
 
 1744977675 c:\users\truong thanh\documents\sdl projects\die to win\setup.h
 
@@ -103,7 +103,7 @@
 	<unordered_map>
 	"LevelObjs.h"
 
-1745679334 source:c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.cpp
+1745768638 source:c:\users\truong thanh\documents\sdl projects\die to win\loadlevel.cpp
 	<iostream>
 	<fstream>
 	<string>
@@ -112,7 +112,7 @@
 	"LevelObjs.h"
 	"LoadLevel.h"
 
-1745727116 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
+1745770418 source:c:\users\truong thanh\documents\sdl projects\die to win\rendering.cpp
 	<string>
 	<vector>
 	<SDL.h>
