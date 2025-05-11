@@ -1,9 +1,12 @@
 ## !!NOTICE!!
 - From 28/04/2025 onwards Die to Win will be updated on a seperate branch. The Main Branch will stay untouched until June.
-- For now I can't teach you how to download the game because I don't know. I apologize.
+- Edit 11/05/2025: Thanks Mr. Lê Đức Trọng for allowing me to update my README.md. I added a source code explanation video and a zip file to download the game.
 
 Full v1.0 playthrough:
 https://youtu.be/6LkZd0_UVzc
+
+Source code explained:
+https://youtu.be/bTpQdrr9XmY
 
 # Introduction
 ![v1 0 playthrough - frame at 0m4s](https://github.com/user-attachments/assets/7e8963b9-394f-4c59-8953-58d94f764397)
@@ -14,6 +17,11 @@ The fundamental objective of a platformer is to avoid death. But what if we flip
 Play through 16 levels, each with its own gimmick. From password guessing to playing Tic-Tac-Toe against bot, the levels will always keep you engaged.
 
 Experience unique gameplay features such as Dash Orb - an orb that lets you dash through the level, Spider Pad - a pad that teleports you around, and many more.
+
+# Installation guide
+- Download the zip file here: https://drive.google.com/file/d/1aMlPoQcydOADbRredIpqB2DiJtsMefLc/view?usp=drive_link
+- Extract it, then run "Die to Win.exe".
+- Make sure that the resources folder and all DLLs are in the same file as the executable.
 
 # Credits
 - Inspired by RobTopGames' Geometry Dash.
