@@ -1,6 +1,6 @@
 ## !!NOTICE!!
 - From 28/04/2025 onwards Die to Win will be updated on a seperate branch. The Main Branch will stay untouched until June.
-- Edit 11/05/2025: Thanks Mr. Lê Đức Trọng for allowing me to update my README.md. I added a source code explanation video and a zip file to download the game.
+- Edit 11/05/2025: I was allowed to update my README.md. I added a source code explanation video and a zip file to download the game.
 
 Full v1.0 playthrough:
 https://youtu.be/6LkZd0_UVzc
@@ -28,7 +28,7 @@ Experience unique gameplay features such as Dash Orb - an orb that lets you dash
 - Most of the game's resources are taken from Geometry Dash, including textures and music.
 - Special thanks to GD Colon for making a website that splits Geometry Dash texture sheets into individual objects.
 - Special thanks to Lazy Foo Productions' SDL Tutorial for not only helping me learn SDL2 but also providing example code.
-- Special thanks to my lecturer, Mr. Lê Đức Trọng, for teaching me C++, SDL and providing some game ideas.
+- Special thanks to my university lecturers for teaching me C++, SDL and providing some game ideas.
 - Special thanks to ChatGPT for the constant bug fixing it has to endure.
 
 # Update history
