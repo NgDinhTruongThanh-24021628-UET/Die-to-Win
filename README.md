@@ -6,7 +6,7 @@ Full v1.0 playthrough:
 https://youtu.be/6LkZd0_UVzc
 
 Source code explained:
-https://youtu.be/bTpQdrr9XmY
+https://youtu.be/4vHPm1pm_IY
 
 # Introduction
 ![v1 0 playthrough - frame at 0m4s](https://github.com/user-attachments/assets/7e8963b9-394f-4c59-8953-58d94f764397)
